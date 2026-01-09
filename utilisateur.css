@@ -1,0 +1,211 @@
+:root {
+    --sidebar-width: 260px;
+    --primary-color: #2c3e50;
+    --secondary-color: #3498db;
+    --accent-color: #e74c3c;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+    overflow-x: hidden;
+}
+
+/* Sidebar Styles */
+.sidebar {
+    width: var(--sidebar-width);
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    background: linear-gradient(180deg, var(--primary-color) 0%, #1a2530 100%);
+    color: white;
+    padding: 0;
+    z-index: 1000;
+    box-shadow: 3px 0 10px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.sidebar-logo {
+    padding: 20px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.sidebar-logo h3 {
+    margin: 0;
+    font-size: 1.4rem;
+    color: white;
+}
+
+.sidebar-logo i {
+    color: var(--secondary-color);
+}
+
+.sidebar-menu {
+    padding: 20px 0;
+}
+
+.sidebar-item {
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    color: rgba(255,255,255,0.8);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+}
+
+.sidebar-item:hover, .sidebar-item.active {
+    background-color: rgba(255,255,255,0.1);
+    color: white;
+    border-left-color: var(--secondary-color);
+}
+
+.sidebar-item i {
+    width: 30px;
+    font-size: 1.1rem;
+}
+
+.sidebar-item span {
+    font-size: 0.95rem;
+}
+
+/* Main Content Styles */
+.main-content {
+    margin-left: var(--sidebar-width);
+    padding: 20px;
+    min-height: 100vh;
+}
+
+.top-navbar {
+    background: white;
+    padding: 15px 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.user-avatar {
+    width: 45px;
+    height: 45px;
+    background: var(--secondary-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.profile-avatar-large {
+    width: 120px;
+    height: 120px;
+    background: linear-gradient(135deg, var(--secondary-color), #2c3e50);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 3rem;
+    font-weight: bold;
+    margin: 0 auto;
+    border: 4px solid white;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.user-info h5 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.user-info p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.notification-bell {
+    position: relative;
+    cursor: pointer;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: var(--accent-color);
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Welcome Section */
+.welcome-section {
+    background: linear-gradient(135deg, var(--secondary-color), #2c3e50);
+    color: white;
+    padding: 30px;
+    border-radius: 10px;
+    margin-bottom: 30px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+/* Modal Styles */
+.modal-content {
+    border-radius: 10px;
+    border: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.modal-header {
+    background: linear-gradient(135deg, var(--secondary-color), #2c3e50);
+    color: white;
+    border-radius: 10px 10px 0 0;
+    border-bottom: none;
+}
+
+.modal-header .btn-close {
+    filter: invert(1);
+}
+
+.form-control-static {
+    padding: 8px 12px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    border: 1px solid #e9ecef;
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+}
+
+/* Utility Classes */
+.menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--primary-color);
+}
+
+.stat-badge {
+    background: var(--secondary-color);
+    color: white;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+}

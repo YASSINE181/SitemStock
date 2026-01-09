@@ -171,7 +171,7 @@
     }
     .field-wrapper input:focus,
     .field-wrapper input:valid {
-        border-bottom: 2px solid #00d4ff;
+        border-bottom: 2px solid #3498db;
     }
     .field-wrapper label {
         position: absolute;
@@ -208,7 +208,7 @@
         cursor: pointer;
         font-size: 16px;
         font-weight: 600;
-        border: 2px solid #00d4ff;
+        border: 2px solid #3498db;
         overflow: hidden;
         z-index: 1;
     }
@@ -217,7 +217,7 @@
         position: absolute;
         height: 300%;
         width: 100%;
-        background: linear-gradient(#1a1a2e, #00d4ff, #1a1a2e, #00d4ff);
+        background: linear-gradient(#1a2530, #3498db, #1a2530, #3498db);
         top: -100%;
         left: 0;
         z-index: -1;
