@@ -36,45 +36,12 @@ if (!empty($_GET['action']) && $_GET['action'] == 'logout') {
     <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- CSS personnalisé -->
-    <link rel="stylesheet" href="utilisateur.css">
+    <link rel="stylesheet" href="acceuil.css">
 </head>
 <body>
-    <!-- Inclusion de la sidebar -->
-    <?php include 'sidebar.php'; ?>
-    
     <!-- Contenu Principal -->
     <div class="main-content">
-        <!-- Barre de Navigation Supérieure -->
-        <div class="top-navbar">
-            <button class="menu-toggle" id="menuToggle">
-                <i class="fas fa-bars"></i>
-            </button>
-            
-            <div class="user-profile">
-                <div class="notification-bell">
-                    <i class="fas fa-bell fa-lg"></i>
-                    <span class="notification-badge">3</span>
-                </div>
-                
-                <div class="dropdown">
-                    <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
-                        <div class="user-avatar">
-                            <?php echo !empty($user['nom']) ? strtoupper(substr($user['nom'], 0, 1)) : 'U'; ?>
-                        </div>
-                        <div class="user-info ms-2">
-                            <h5><?php echo !empty($user['nom']) ? htmlspecialchars($user['nom']) : 'Utilisateur'; ?></h5>
-                            <p>Administrateur</p>
-                        </div>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#profileModal"><i class="fas fa-user-circle me-2"></i> Mon profil</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-danger" href="?action=logout"><i class="fas fa-sign-out-alt me-2"></i> Déconnexion</a></li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-        
+         <?php include 'sidebar.php'; ?>
         <!-- Section de Bienvenue -->
         <div class="welcome-section">
             <div class="row align-items-center">

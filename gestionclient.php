@@ -58,35 +58,12 @@ $clients = $db->query("SELECT * FROM client ORDER BY id DESC")->fetchAll(PDO::FE
 <title>Gestion des Clients - SitemStock</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href="utilisateur.css">
+<link rel="stylesheet" href="acceuil.css">
 <link rel="stylesheet" href="gestionstock.css">
 </head>
 <body>
-<?php include 'sidebar.php'; ?>
 <div class="main-content">
-    <!-- TOP NAVBAR -->
-    <div class="top-navbar">
-        <div class="user-profile">
-            <div class="notification-bell">
-                <i class="fas fa-bell fa-lg"></i>
-                <span class="notification-badge">3</span>
-            </div>
-            <div class="dropdown">
-                <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
-                    <div class="user-avatar">
-                        <?= !empty($user['nom']) ? strtoupper(substr($user['nom'],0,1)) : 'U'; ?>
-                    </div>
-                    <div class="user-info ms-2">
-                        <h5><?= !empty($user['nom']) ? htmlspecialchars($user['nom']) : 'Utilisateur'; ?></h5>
-                        <p>Administrateur</p>
-                    </div>
-                </a>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="?action=logout"><i class="fas fa-sign-out-alt me-2"></i> Déconnexion</a></li>
-                </ul>
-            </div>
-        </div>
-    </div>
+    <?php include 'sidebar.php'; ?>
     <!-- WELCOME -->
     <div class="welcome-section">
         <div class="row align-items-center">
@@ -132,20 +109,15 @@ $clients = $db->query("SELECT * FROM client ORDER BY id DESC")->fetchAll(PDO::FE
                             <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modifierModal" onclick='chargerClient(<?= json_encode($client) ?>)'>
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="if(confirm('Supprimer ce client ?')) document.getElementById('del<?= $client['id'] ?>').submit();">
+                            <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#supprimerModal" onclick="setDeleteId(<?= $client['id'] ?>)">
                                 <i class="fas fa-trash"></i>
                             </button>
-                            <form id="del<?= $client['id'] ?>" method="POST" style="display:none;">
-                                <input type="hidden" name="action" value="supprimer">
-                                <input type="hidden" name="id" value="<?= $client['id'] ?>">
-                            </form>
                         </td>
                     </tr>
                     <?php endforeach; ?>
                     <?php if(empty($clients)): ?>
                     <tr>
-                        <td colspan="7" class="text-center py-4 text-muted">
-                            <i class="fas fa-user fa-2x mb-2"></i><br>
+                        <td colspan="7" class="text-center py-2 text-muted">
                             Aucun client enregistré
                         </td>
                     </tr>
@@ -155,6 +127,7 @@ $clients = $db->query("SELECT * FROM client ORDER BY id DESC")->fetchAll(PDO::FE
         </div>
     </div>
 </div>
+
 <!-- MODAL AJOUTER CLIENT -->
 <div class="modal fade" id="ajouterModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -199,6 +172,7 @@ $clients = $db->query("SELECT * FROM client ORDER BY id DESC")->fetchAll(PDO::FE
         </div>
     </div>
 </div>
+
 <!-- MODAL MODIFIER CLIENT -->
 <div class="modal fade" id="modifierModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -244,6 +218,28 @@ $clients = $db->query("SELECT * FROM client ORDER BY id DESC")->fetchAll(PDO::FE
         </div>
     </div>
 </div>
+
+<!-- MODAL SUPPRIMER CLIENT -->
+<div class="modal fade" id="supprimerModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <form method="POST" class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-trash me-1"></i> Supprimer le client</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p>Voulez-vous vraiment supprimer ce client ?</p>
+                <input type="hidden" name="action" value="supprimer">
+                <input type="hidden" name="id" id="sup_id">
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" class="btn btn-danger">Supprimer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 function chargerClient(client){
@@ -254,7 +250,11 @@ function chargerClient(client){
     document.getElementById('edit_email').value = client.email;
     document.getElementById('edit_adresse').value = client.adresse;
 }
+
+// Fonction pour ouvrir le modal de suppression et passer l'id
+function setDeleteId(id){
+    document.getElementById('sup_id').value = id;
+}
 </script>
 </body>
 </html>
-
