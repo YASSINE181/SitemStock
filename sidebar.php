@@ -55,6 +55,9 @@ try {
         <a href="fournisseur.php" class="sidebar-item <?= basename($_SERVER['PHP_SELF']) == 'fournisseur.php' ? 'active' : ''; ?>">
             <i class="fas fa-truck"></i><span>Fournisseurs</span>
         </a>
+        <a href="utilisateur.php" class="sidebar-item <?= basename($_SERVER['PHP_SELF']) == 'utilisateur.php' ? 'active' : ''; ?>">
+            <i class="fas fa-user"></i><span>Utilisateurs</span>
+        </a>
 
         <a href="commande.php" class="sidebar-item <?= basename($_SERVER['PHP_SELF']) == 'commande.php' ? 'active' : ''; ?>">
             <i class="fas fa-shopping-cart"></i><span>Commandes</span>
@@ -76,6 +79,7 @@ try {
 <!-- Barre de Navigation Supérieure -->
 <div class="top-navbar">
     <div class="user-profile">
+        
         <div class="dropdown">
             <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
                 <div class="user-avatar">
@@ -125,10 +129,7 @@ try {
                         <input type="text" class="form-control" value="<?php echo date('d/m/Y'); ?>" readonly>
                     </div>
                     
-                    <div class="mb-3">
-                        <label class="form-label"><i class="fas fa-shield-alt me-2"></i> Rôle</label>
-                        <input type="text" class="form-control" value="Administrateur" readonly>
-                    </div>
+                   
                     
                     <div class="mb-3">
                         <label class="form-label"><i class="fas fa-clock me-2"></i> Dernière connexion</label>
@@ -138,10 +139,13 @@ try {
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                </button>
             </div>
         </div>
     </div>
 </div>
+
+
 <style>
 /* Styles pour les avatars */
 .profile-avatar-large {
@@ -194,3 +198,7 @@ try {
     justify-content: center;
 }
 </style>
+<<<<<<< HEAD
+=======
+
+>>>>>>> 887e58d0182093755b3fa36b5e1b2f3278439f70

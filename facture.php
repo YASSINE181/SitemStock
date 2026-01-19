@@ -49,7 +49,7 @@ if (!$commande) {
 $stmt = $db->prepare("
     SELECT 
         p.nom AS produit_nom,
-        p.reference AS produit_ref,
+         
         cp.quantite,
         p.prix_vente,
         (cp.quantite * p.prix_vente) AS total_ligne

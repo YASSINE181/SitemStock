@@ -199,182 +199,144 @@ $produits = $db->query("SELECT id, nom FROM produit ORDER BY nom")->fetchAll(PDO
             </div>
         </div>
     </div>
-    
-    <!-- Message Flash -->
-    <?php if (!empty($_SESSION['message'])): ?>
-    <div class="alert alert-info alert-dismissible fade show mt-3" role="alert">
-        <?= $_SESSION['message'] ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-    <?php unset($_SESSION['message']); ?>
-    <?php endif; ?>
-    
-    <!-- TABLE MOUVEMENTS -->
-    <div class="table-container">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0">Liste des mouvements (<?= count($mouvements); ?>)</h5>
-        </div>
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead class="table-light">
+
+    <!-- ================= TABLE ================= -->
+    <div class="table-container mt-3">
+        <table class="table table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Produit</th>
+                    <th>Type</th>
+                    <th>Quantité</th>
+                    <th>Date</th>
+                    <th class="text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            <?php if ($mouvements): ?>
+                <?php foreach ($mouvements as $m): ?>
                     <tr>
-                        <th>ID</th>
-                        <th>Produit</th>
-                        <th>Type</th>
-                        <th>Quantité</th>
-                        <th>Date</th>
-                        <th class="text-center">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($mouvements as $mouvement): ?>
-                    <tr>
-                        <td><?= $mouvement['id'] ?></td>
-                        <td><?= htmlspecialchars($mouvement['produit_nom']) ?></td>
+                        <td><?= htmlspecialchars($m['nom_produit']) ?></td>
                         <td>
-                            <?php if ($mouvement['type'] === 'entree'): ?>
-                                <span class="badge bg-success">Entrée</span>
-                            <?php else: ?>
-                                <span class="badge bg-danger">Sortie</span>
-                            <?php endif; ?>
+                           <span class="badge <?= $m['type']=='entree'?'bg-success':'bg-danger' ?>">
+                            <?= $m['type']=='entree'?'Entrée':'Sortie' ?>
+                            </span>
                         </td>
-                        <td><?= htmlspecialchars($mouvement['quantite']) ?></td>
-                        <td><?= date('d/m/Y', strtotime($mouvement['date_mouvement'])) ?></td>
+                        <td><?= $m['quantite'] ?></td>
+                        <td><?= $m['date_mouvement'] ?></td>
                         <td class="text-center">
-                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modifierModal" onclick='chargerMouvement(<?= json_encode($mouvement) ?>)'>
+                            <button class="btn btn-primary btn-action"
+                                onclick='ouvrirModal(
+                                    <?= $m["id"] ?>,
+                                    <?= $m["id_produit"] ?>,
+                                    "<?= $m["type"] ?>",
+                                    <?= $m["quantite"] ?>,
+                                    "<?= $m["date_mouvement"] ?>")'>
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#supprimerModal" onclick="setDeleteId(<?= $mouvement['id'] ?>)">
+
+                            <button class="btn btn-danger btn-action"
+                                onclick="ouvrirModalSupp(<?= $m['id'] ?>)">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </td>
                     </tr>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <tr>
+                    <td colspan="5" class="text-center">Aucun mouvement</td>
+                </tr>
+            <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ================= MODALS ================= -->
+
+<!-- AJOUT -->
+<div class="modal fade" id="modalAjouter">
+    <div class="modal-dialog">
+        <form method="post" class="modal-content">
+            <input type="hidden" name="action" value="ajouter">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-plus-circle me-1"></i> Ajouter mouvement</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <select name="id_produit" class="form-select mb-2" required>
+                    <option value="">Produit</option>
+                    <?php foreach ($produits as $p): ?>
+                        <option value="<?= $p['id'] ?>"><?= htmlspecialchars($p['nom']) ?></option>
                     <?php endforeach; ?>
-                    <?php if(empty($mouvements)): ?>
-                    <tr>
-                        <td colspan="6" class="text-center py-2 text-muted">
-                            Aucun mouvement enregistré
-                        </td>
-                    </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
+                </select>
+
+               <select name="type" class="form-select mb-2" required>
+                    <option value="entree">Entrée</option>
+                    <option value="sortie">Sortie</option>
+                </select>
+
+
+                <input class="form-control mb-2" type="number" name="quantite" min="1" required>
+                <input class="form-control" type="date" name="date_mouvement" required>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" class="btn btn-success">Ajouter</button>
+            </div>
+        </form>
     </div>
 </div>
 
-<!-- MODAL AJOUTER MOUVEMENT -->
-<div class="modal fade" id="ajouterModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <form method="POST">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i> Ajouter un mouvement</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" name="action" value="ajouter">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Produit *</label>
-                            <select class="form-select" name="id_produit" required>
-                                <option value="">Sélectionnez un produit</option>
-                                <?php foreach ($produits as $produit): ?>
-                                    <option value="<?= $produit['id'] ?>"><?= htmlspecialchars($produit['nom']) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Type *</label>
-                            <select class="form-select" name="type" required>
-                                <option value="entree">Entrée de stock</option>
-                                <option value="sortie">Sortie de stock</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Quantité *</label>
-                            <input type="number" class="form-control" name="quantite" min="1" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Date *</label>
-                            <input type="date" class="form-control" name="date_mouvement" value="<?= date('Y-m-d') ?>" required>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" class="btn btn-primary">Enregistrer</button>
-                </div>
-            </form>
-        </div>
+<!-- MODIFIER -->
+<div class="modal fade" id="modalModifier">
+    <div class="modal-dialog">
+        <form method="post" class="modal-content">
+            <input type="hidden" name="action" value="modifier">
+            <input type="hidden" name="id" id="edit-id">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-edit me-1"></i> Modifier mouvement</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <select name="id_produit" id="edit-produit" class="form-select mb-2" required>
+                    <?php foreach ($produits as $p): ?>
+                        <option value="<?= $p['id'] ?>"><?= htmlspecialchars($p['nom']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+
+                <select name="type" id="edit-type" class="form-select mb-2" required>
+                     <option value="entree">Entrée</option>
+                     <option value="sortie">Sortie</option>
+                </select>
+
+
+                <input class="form-control mb-2" id="edit-quantite" name="quantite" type="number" min="1" required>
+                <input class="form-control" id="edit-date" name="date_mouvement" type="date" required>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" class="btn btn-primary">Enregistrer</button>
+            </div>
+        </form>
     </div>
 </div>
 
-<!-- MODAL MODIFIER MOUVEMENT -->
-<div class="modal fade" id="modifierModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <form method="POST">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-edit me-2"></i> Modifier le mouvement</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" name="action" value="modifier">
-                    <input type="hidden" name="id" id="edit_id">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Produit *</label>
-                            <select class="form-select" name="id_produit" id="edit_id_produit" required>
-                                <option value="">Sélectionnez un produit</option>
-                                <?php foreach ($produits as $produit): ?>
-                                    <option value="<?= $produit['id'] ?>"><?= htmlspecialchars($produit['nom']) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Type *</label>
-                            <select class="form-select" name="type" id="edit_type" required>
-                                <option value="entree">Entrée de stock</option>
-                                <option value="sortie">Sortie de stock</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Quantité *</label>
-                            <input type="number" class="form-control" name="quantite" id="edit_quantite" min="1" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Date *</label>
-                            <input type="date" class="form-control" name="date_mouvement" id="edit_date_mouvement" required>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" class="btn btn-primary">Mettre à jour</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- MODAL SUPPRIMER MOUVEMENT -->
-<div class="modal fade" id="supprimerModal" tabindex="-1">
+<!-- SUPPRIMER -->
+<div class="modal fade" id="modalSupp" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <form method="POST" class="modal-content">
+        <form method="post" class="modal-content">
             <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title"><i class="fas fa-trash me-1"></i> Supprimer le mouvement</h5>
+                <h5 class="modal-title"><i class="fas fa-trash me-1"></i> Supprimer mouvement</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
+
             <div class="modal-body text-center">
                 <p>Voulez-vous vraiment supprimer ce mouvement ?</p>
                 <input type="hidden" name="action" value="supprimer">
-                <input type="hidden" name="id" id="sup_id">
+                <input type="hidden" name="id" id="delete-id">
             </div>
+
             <div class="modal-footer justify-content-center">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
                 <button type="submit" class="btn btn-danger">Supprimer</button>
@@ -383,20 +345,53 @@ $produits = $db->query("SELECT id, nom FROM produit ORDER BY nom")->fetchAll(PDO
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-function chargerMouvement(mouvement){
-    document.getElementById('edit_id').value = mouvement.id;
-    document.getElementById('edit_id_produit').value = mouvement.id_produit;
-    document.getElementById('edit_type').value = mouvement.type;
-    document.getElementById('edit_quantite').value = mouvement.quantite;
-    document.getElementById('edit_date_mouvement').value = mouvement.date_mouvement;
+function ouvrirAjouterModal() {
+    new bootstrap.Modal(document.getElementById('modalAjouter')).show();
 }
 
-// Fonction pour ouvrir le modal de suppression et passer l'id
-function setDeleteId(id){
-    document.getElementById('sup_id').value = id;
+function ouvrirModal(id, produit, type, qte, date) {
+    document.getElementById('edit-id').value = id;
+    document.getElementById('edit-produit').value = produit;
+    document.getElementById('edit-type').value = type;
+    document.getElementById('edit-quantite').value = qte;
+    document.getElementById('edit-date').value = date;
+    new bootstrap.Modal(document.getElementById('modalModifier')).show();
+}
+
+function ouvrirModalSupp(id) {
+    document.getElementById('delete-id').value = id;
+    new bootstrap.Modal(document.getElementById('modalSupp')).show();
 }
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- MODAL MESSAGE -->
+<div class="modal fade" id="modalMessage" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center">
+            <div class="modal-body py-4">
+                <h5 class="mb-0">
+                    <?= htmlspecialchars($message) ?>
+                </h5>
+            </div>
+        </div>
+    </div>
+</div>
+<?php if (!empty($message)): ?>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    let modal = new bootstrap.Modal(document.getElementById('modalMessage'));
+    modal.show();
+
+    // fermer après 2 secondes
+    setTimeout(() => {
+        modal.hide();
+    }, 2000);
+});
+</script>
+<?php endif; ?>
+
 </body>
 </html>

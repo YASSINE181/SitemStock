@@ -137,133 +137,168 @@ $fournisseurs = $db->query("SELECT * FROM fournisseur ORDER BY id DESC")->fetchA
     </div>
 </div>
 
-<!-- MODAL AJOUTER FOURNISSEUR -->
-<div class="modal fade" id="ajouterModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <form method="POST">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i> Ajouter un fournisseur</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" name="action" value="ajouter">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Nom *</label>
-                            <input class="form-control" name="nom" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Nom du livreur *</label>
-                            <input class="form-control" name="nomLivreur" required>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Téléphone</label>
-                            <input class="form-control" name="telephone">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Email</label>
-                            <input class="form-control" name="email" type="email">
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Adresse</label>
-                        <input class="form-control" name="adresse">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" class="btn btn-primary">Enregistrer</button>
-                </div>
-            </form>
-        </div>
-    </div>
+<!-- ================= TABLE ================= -->
+<div class="table-container">
+<table class="table table-hover align-middle">
+<thead class="table-dark">
+<tr>
+    <th>Nom</th>
+    <th>Livreur</th>
+    <th>Téléphone</th>
+    <th>Email</th>
+    <th>Adresse</th>
+    <th class="text-center">Actions</th>
+</tr>
+</thead>
+<tbody>
+
+<?php foreach ($fournisseurs as $f): ?>
+<tr>
+    <td><?= htmlspecialchars($f['nom']) ?></td>
+    <td><?= htmlspecialchars($f['nomLivreur']) ?></td>
+    <td><?= htmlspecialchars($f['telephone']) ?></td>
+    <td><?= htmlspecialchars($f['email']) ?></td>
+    <td><?= htmlspecialchars($f['adresse']) ?></td>
+    <td class="text-center">
+        <button class="btn btn-primary btn-action"
+            onclick='ouvrirModifierModal(<?= json_encode($f) ?>)'>
+            <i class="fas fa-edit"></i>
+        </button>
+
+        <button class="btn btn-danger btn-action"
+            onclick="ouvrirSupprimerModal(<?= $f['id'] ?>)">
+            <i class="fas fa-trash"></i>
+        </button>
+    </td>
+</tr>
+<?php endforeach; ?>
+
+<?php if (empty($fournisseurs)): ?>
+<tr>
+    <td colspan="6" class="text-center text-muted py-4">
+        Aucun fournisseur
+    </td>
+</tr>
+<?php endif; ?>
+
+</tbody>
+</table>
+</div>
 </div>
 
-<!-- MODAL MODIFIER FOURNISSEUR -->
-<div class="modal fade" id="modifierModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <form method="POST">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-edit me-2"></i> Modifier le fournisseur</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" name="action" value="modifier">
-                    <input type="hidden" name="id" id="edit_id">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Nom *</label>
-                            <input class="form-control" name="nom" id="edit_nom" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Nom du livreur *</label>
-                            <input class="form-control" name="nomLivreur" id="edit_nomLivreur" required>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Téléphone</label>
-                            <input class="form-control" name="telephone" id="edit_telephone">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Email</label>
-                            <input class="form-control" name="email" type="email" id="edit_email">
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Adresse</label>
-                        <input class="form-control" name="adresse" id="edit_adresse">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" class="btn btn-primary">Mettre à jour</button>
-                </div>
-            </form>
-        </div>
-    </div>
+<!-- ================= MODALS ================= -->
+
+<!-- AJOUT -->
+<div class="modal fade" id="modalAjouter">
+<div class="modal-dialog">
+<form method="post" class="modal-content">
+<div class="modal-header">
+    <h5 class="modal-title">Ajouter fournisseur</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+<div class="modal-body">
+    <input type="hidden" name="action" value="ajouter">
+    <input class="form-control mb-2" name="nom" placeholder="Nom" required>
+    <input class="form-control mb-2" name="nomLivreur" placeholder="Nom livreur" required>
+    <input class="form-control mb-2" name="telephone" placeholder="Téléphone" required>
+    <input class="form-control mb-2" name="email" type="email" placeholder="Email" required>
+    <input class="form-control" name="adresse" placeholder="Adresse" required>
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+    <button type="submit" class="btn btn-success">Ajouter</button>
+</div>
+</form>
+</div>
 </div>
 
-<!-- MODAL SUPPRIMER FOURNISSEUR -->
-<div class="modal fade" id="supprimerModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <form method="POST" class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title"><i class="fas fa-trash me-1"></i> Supprimer le fournisseur</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body text-center">
-                <p>Voulez-vous vraiment supprimer ce fournisseur ?</p>
-                <input type="hidden" name="action" value="supprimer">
-                <input type="hidden" name="id" id="sup_id">
-            </div>
-            <div class="modal-footer justify-content-center">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                <button type="submit" class="btn btn-danger">Supprimer</button>
-            </div>
-        </form>
-    </div>
+<!-- MODIFIER -->
+<div class="modal fade" id="modalModifier">
+<div class="modal-dialog">
+<form method="post" class="modal-content">
+<div class="modal-header">
+    <h5 class="modal-title">Modifier fournisseur</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
 </div>
+<div class="modal-body">
+    <input type="hidden" name="action" value="modifier">
+    <input type="hidden" name="id" id="edit-id">
+    <input class="form-control mb-2" name="nom" id="edit-nom" required>
+    <input class="form-control mb-2" name="nomLivreur" id="edit-nomLivreur" required>
+    <input class="form-control mb-2" name="telephone" id="edit-telephone" required>
+    <input class="form-control mb-2" name="email" id="edit-email" required>
+    <input class="form-control" name="adresse" id="edit-adresse" required>
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+</div>
+</form>
+</div>
+</div>
+
+<!-- SUPPRIMER -->
+<div class="modal fade" id="modalSupprimer">
+<div class="modal-dialog modal-dialog-centered">
+<form method="post" class="modal-content">
+<div class="modal-header bg-danger text-white">
+    <h5 class="modal-title">Supprimer fournisseur</h5>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+</div>
+<div class="modal-body text-center">
+    <p>Voulez-vous vraiment supprimer ce fournisseur ?</p>
+    <input type="hidden" name="action" value="supprimer">
+    <input type="hidden" name="id" id="delete-id">
+</div>
+<div class="modal-footer justify-content-center">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+    <button type="submit" class="btn btn-danger">Supprimer</button>
+</div>
+</form>
+</div>
+</div>
+
+<!-- ================= MODAL MESSAGE ================= -->
+<?php if (!empty($_SESSION['message'])): ?>
+<div class="modal fade" id="messageModal">
+<div class="modal-dialog modal-dialog-centered">
+<div class="modal-content text-center">
+<div class="modal-body py-4">
+    <h5><?= htmlspecialchars($_SESSION['message']) ?></h5>
+</div>
+</div>
+</div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const modal = new bootstrap.Modal(document.getElementById('messageModal'));
+    modal.show();
+    setTimeout(() => modal.hide(), 2000);
+});
+</script>
+<?php unset($_SESSION['message']); ?>
+<?php endif; ?>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-function chargerFournisseur(fournisseur){
-    document.getElementById('edit_id').value = fournisseur.id;
-    document.getElementById('edit_nom').value = fournisseur.nom;
-    document.getElementById('edit_nomLivreur').value = fournisseur.nomLivreur;
-    document.getElementById('edit_telephone').value = fournisseur.telephone;
-    document.getElementById('edit_email').value = fournisseur.email;
-    document.getElementById('edit_adresse').value = fournisseur.adresse;
+function ouvrirAjouterModal() {
+    new bootstrap.Modal(document.getElementById('modalAjouter')).show();
 }
-
-// Fonction pour ouvrir le modal de suppression et passer l'id
-function setDeleteId(id){
-    document.getElementById('sup_id').value = id;
+function ouvrirModifierModal(f) {
+    document.getElementById('edit-id').value = f.id;
+    document.getElementById('edit-nom').value = f.nom;
+    document.getElementById('edit-nomLivreur').value = f.nomLivreur;
+    document.getElementById('edit-telephone').value = f.telephone;
+    document.getElementById('edit-email').value = f.email;
+    document.getElementById('edit-adresse').value = f.adresse;
+    new bootstrap.Modal(document.getElementById('modalModifier')).show();
+}
+function ouvrirSupprimerModal(id) {
+    document.getElementById('delete-id').value = id;
+    new bootstrap.Modal(document.getElementById('modalSupprimer')).show();
 }
 </script>
+
 </body>
 </html>

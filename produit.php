@@ -28,12 +28,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
         switch ($_POST['action']) {
             case 'ajouter':
-                $stmt = $db->prepare("INSERT INTO produit (reference, nom, description, categorie, fournisseur_id, prix_achat, prix_vente, quantite_stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt = $db->prepare("INSERT INTO produit (nom, description , fournisseur_id, prix_achat, prix_vente, quantite_stock) VALUES (?, ?, ?, ?, ?, ?)");
                 $stmt->execute([
-                    $_POST['reference'],
                     $_POST['nom'],
                     $_POST['description'],
-                    $_POST['categorie'] ?: null,   // <-- maintenant select
                     $_POST['fournisseur_id'] ?: null,
                     $_POST['prix_achat'],
                     $_POST['prix_vente'],
@@ -42,12 +40,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 break;
                 
             case 'modifier':
-                $stmt = $db->prepare("UPDATE produit SET reference = ?, nom = ?, description = ?, categorie = ?, fournisseur_id = ?, prix_achat = ?, prix_vente = ?, quantite_stock = ? WHERE id = ?");
+                $stmt = $db->prepare("UPDATE produit SET  nom = ?, description = ?, fournisseur_id = ?, prix_achat = ?, prix_vente = ?, quantite_stock = ? WHERE id = ?");
                 $stmt->execute([
-                    $_POST['reference'],
                     $_POST['nom'],
                     $_POST['description'],
-                    $_POST['categorie'] ?: null,   // <-- maintenant select
                     $_POST['fournisseur_id'] ?: null,
                     $_POST['prix_achat'],
                     $_POST['prix_vente'],
@@ -104,7 +100,7 @@ $fournisseurs = $db->query("SELECT * FROM fournisseur ORDER BY nom")->fetchAll(P
         <table class="table table-hover">
             <thead class="table-light">
                 <tr>
-                    <th>ID</th><th>Référence</th><th>Produit</th><th>Catégorie</th><th>Fournisseur</th>
+                    <th>ID</th><th>Produit</th><th>Fournisseur_ID</th>
                     <th class="text-center">Stock</th><th class="text-end">Prix Achat</th><th class="text-end">Prix Vente</th>
                     <th class="text-end">Marge</th><th class="text-center">Actions</th>
                 </tr>
@@ -113,9 +109,7 @@ $fournisseurs = $db->query("SELECT * FROM fournisseur ORDER BY nom")->fetchAll(P
             <?php foreach($produits as $produit): ?>
                 <tr>
                     <td><?= $produit['id'] ?></td>
-                    <td><?= htmlspecialchars($produit['reference']) ?></td>
                     <td><?= htmlspecialchars($produit['nom']) ?><br><small><?= htmlspecialchars(substr($produit['description'],0,50)) ?>...</small></td>
-                    <td><?= htmlspecialchars($produit['categorie'] ?? 'Non classé') ?></td>
                     <td><?= htmlspecialchars($produit['fournisseur_id'] ?? 'Non défini') ?></td>
                     <td class="text-center">
                         <?php
@@ -153,20 +147,9 @@ $fournisseurs = $db->query("SELECT * FROM fournisseur ORDER BY nom")->fetchAll(P
     </div>
     <div class="modal-body">
         <input type="hidden" name="action" value="ajouter">
-        <div class="mb-3"><label>Référence *</label><input class="form-control" name="reference" required></div>
         <div class="mb-3"><label>Nom *</label><input class="form-control" name="nom" required></div>
         <div class="mb-3"><label>Description</label><textarea class="form-control" name="description"></textarea></div>
 
-        <!-- Select catégorie avec 3 choix -->
-        <div class="mb-3">
-            <label>Catégorie</label>
-            <select class="form-control" name="categorie" required>
-                <option value="">-- Sélectionnez --</option>
-                <option value="Informatique">Informatique</option>
-                <option value="Electronique">Electronique</option>
-                <option value="Bureau">Bureau</option>
-            </select>
-        </div>
 
         <!-- Fournisseur -->
         <div class="mb-3">
@@ -202,20 +185,10 @@ $fournisseurs = $db->query("SELECT * FROM fournisseur ORDER BY nom")->fetchAll(P
     <div class="modal-body">
         <input type="hidden" name="action" value="modifier">
         <input type="hidden" name="id" id="edit_id">
-        <div class="mb-3"><label>Référence *</label><input class="form-control" name="reference" id="edit_reference" required></div>
         <div class="mb-3"><label>Nom *</label><input class="form-control" name="nom" id="edit_nom" required></div>
         <div class="mb-3"><label>Description</label><textarea class="form-control" name="description" id="edit_description"></textarea></div>
 
-        <!-- Select catégorie -->
-        <div class="mb-3">
-            <label>Catégorie</label>
-            <select class="form-control" name="categorie" id="edit_categorie_id" required>
-                <option value="">-- Sélectionnez --</option>
-                <option value="Informatique">Informatique</option>
-                <option value="Electronique">Electronique</option>
-                <option value="Bureau">Bureau</option>
-            </select>
-        </div>
+       
 
         <!-- Fournisseur -->
         <div class="mb-3">
@@ -265,10 +238,8 @@ $fournisseurs = $db->query("SELECT * FROM fournisseur ORDER BY nom")->fetchAll(P
 <script>
 function chargerProduit(produit){
     document.getElementById('edit_id').value = produit.id;
-    document.getElementById('edit_reference').value = produit.reference;
     document.getElementById('edit_nom').value = produit.nom;
     document.getElementById('edit_description').value = produit.description;
-    document.getElementById('edit_categorie_id').value = produit.categorie;
     document.getElementById('edit_fournisseur_id').value = produit.fournisseur_id;
     document.getElementById('edit_prix_achat').value = produit.prix_achat;
     document.getElementById('edit_prix_vente').value = produit.prix_vente;
