@@ -116,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $db->prepare("DELETE FROM commande WHERE id=?")->execute([$id]);
     }
 
-    header("Location: gestioncommande.php");
+    header("Location: commande.php");
     exit;
 }
 
@@ -140,8 +140,7 @@ $fournisseurs = $db->query("SELECT * FROM fournisseur")->fetchAll(PDO::FETCH_ASS
 <title>Gestion Commandes</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-<link rel="stylesheet" href="gestionstock.css">
-<link rel="stylesheet" href="utilisateur.css">
+<link rel="stylesheet" href="sidebar.css">
 </head>
 <body>
 

@@ -204,7 +204,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['login'])) {
                     $_SESSION['logged_in'] = true;
                     
                     // Redirection vers la page utilisateur
-                    header("Location: acceuil.php");
+                    header("Location: tableaudebord.php");
                     exit();
                 } else {
                     $message = "Mot de passe incorrect.";
@@ -224,12 +224,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['login'])) {
 
 // Vérifier si l'utilisateur est déjà connecté
 if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true) {
-    header("Location: acceuil.php");
+    header("Location: tableaudebord.php");
     exit();
 }
 ?>
-
-<!-- LE RESTE DE VOTRE HTML EXISTANT (JE NE LE MODIFIE PAS) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -316,6 +314,9 @@ if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true) {
                 </p>
             </div>
         </form>
+    </div>
+    <!-- WELCOME SECTION POUR LE REGISTER -->
+    <div class="welcome-section signup">
     </div>
 </div>
 <!-- JS EXTERNE -->

@@ -16,10 +16,10 @@ $user = $req->fetch(PDO::FETCH_ASSOC);
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     switch ($_POST['action']) {
         case 'ajouter':
-            $stmt = $db->prepare("INSERT INTO client (nom, prenom, telephone, email, adresse) VALUES (?, ?, ?, ?, ?)");
+            $stmt = $db->prepare("INSERT INTO fournisseur (nom, nomLivreur, telephone, email, adresse) VALUES (?, ?, ?, ?, ?)");
             $stmt->execute([
                 $_POST['nom'],
-                $_POST['prenom'],
+                $_POST['nomLivreur'],
                 $_POST['telephone'],
                 $_POST['email'],
                 $_POST['adresse']
@@ -27,10 +27,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             break;
 
         case 'modifier':
-            $stmt = $db->prepare("UPDATE client SET nom=?, prenom=?, telephone=?, email=?, adresse=? WHERE id=?");
+            $stmt = $db->prepare("UPDATE fournisseur SET nom=?, nomLivreur=?, telephone=?, email=?, adresse=? WHERE id=?");
             $stmt->execute([
                 $_POST['nom'],
-                $_POST['prenom'],
+                $_POST['nomLivreur'],
                 $_POST['telephone'],
                 $_POST['email'],
                 $_POST['adresse'],
@@ -39,27 +39,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             break;
 
         case 'supprimer':
-            $stmt = $db->prepare("DELETE FROM client WHERE id=?");
+            $stmt = $db->prepare("DELETE FROM fournisseur WHERE id=?");
             $stmt->execute([$_POST['id']]);
             break;
     }
-    header("Location: gestionclient.php");
+    header("Location: fournisseur.php");
     exit;
 }
 
-// Récupérer clients
-$clients = $db->query("SELECT * FROM client ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
+// Récupérer fournisseurs
+$fournisseurs = $db->query("SELECT * FROM fournisseur ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gestion des Clients - SitemStock</title>
+<title>Gestion des Fournisseurs - SitemStock</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href="acceuil.css">
-<link rel="stylesheet" href="gestionstock.css">
+<link rel="stylesheet" href="sidebar.css">
 </head>
 <body>
 <div class="main-content">
@@ -68,20 +67,30 @@ $clients = $db->query("SELECT * FROM client ORDER BY id DESC")->fetchAll(PDO::FE
     <div class="welcome-section">
         <div class="row align-items-center">
             <div class="col-md-8">
-                <h2><i class="fas fa-users me-2"></i> Gestion des Clients</h2>
-                <p class="mb-0">Gérez l'ensemble des clients et leurs informations.</p>
+                <h2><i class="fas fa-truck me-2"></i> Gestion des Fournisseurs</h2>
+                <p class="mb-0">Gérez l'ensemble des fournisseurs et leurs informations.</p>
             </div>
             <div class="col-md-4 text-end">
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ajouterModal">
-                    <i class="fas fa-plus me-1"></i> Ajouter un client
+                    <i class="fas fa-plus me-1"></i> Ajouter un fournisseur
                 </button>
             </div>
         </div>
     </div>
-    <!-- TABLE CLIENTS -->
+    
+    <!-- Message Flash -->
+    <?php if (!empty($_SESSION['message'])): ?>
+    <div class="alert alert-info alert-dismissible fade show mt-3" role="alert">
+        <?= $_SESSION['message'] ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <?php unset($_SESSION['message']); ?>
+    <?php endif; ?>
+    
+    <!-- TABLE FOURNISSEURS -->
     <div class="table-container">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0">Liste des clients (<?= count($clients); ?>)</h5>
+            <h5 class="mb-0">Liste des fournisseurs (<?= count($fournisseurs); ?>)</h5>
         </div>
         <div class="table-responsive">
             <table class="table table-hover">
@@ -89,7 +98,7 @@ $clients = $db->query("SELECT * FROM client ORDER BY id DESC")->fetchAll(PDO::FE
                     <tr>
                         <th>ID</th>
                         <th>Nom</th>
-                        <th>Prénom</th>
+                        <th>Nom Livreur</th>
                         <th>Téléphone</th>
                         <th>Email</th>
                         <th>Adresse</th>
@@ -97,28 +106,28 @@ $clients = $db->query("SELECT * FROM client ORDER BY id DESC")->fetchAll(PDO::FE
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($clients as $client): ?>
+                    <?php foreach ($fournisseurs as $fournisseur): ?>
                     <tr>
-                        <td><?= $client['id'] ?></td>
-                        <td><?= htmlspecialchars($client['nom']) ?></td>
-                        <td><?= htmlspecialchars($client['prenom']) ?></td>
-                        <td><?= htmlspecialchars($client['telephone']) ?></td>
-                        <td><?= htmlspecialchars($client['email']) ?></td>
-                        <td><?= htmlspecialchars($client['adresse']) ?></td>
+                        <td><?= $fournisseur['id'] ?></td>
+                        <td><?= htmlspecialchars($fournisseur['nom']) ?></td>
+                        <td><?= htmlspecialchars($fournisseur['nomLivreur']) ?></td>
+                        <td><?= htmlspecialchars($fournisseur['telephone']) ?></td>
+                        <td><?= htmlspecialchars($fournisseur['email']) ?></td>
+                        <td><?= htmlspecialchars($fournisseur['adresse']) ?></td>
                         <td class="text-center">
-                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modifierModal" onclick='chargerClient(<?= json_encode($client) ?>)'>
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modifierModal" onclick='chargerFournisseur(<?= json_encode($fournisseur) ?>)'>
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#supprimerModal" onclick="setDeleteId(<?= $client['id'] ?>)">
+                            <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#supprimerModal" onclick="setDeleteId(<?= $fournisseur['id'] ?>)">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </td>
                     </tr>
                     <?php endforeach; ?>
-                    <?php if(empty($clients)): ?>
+                    <?php if(empty($fournisseurs)): ?>
                     <tr>
                         <td colspan="7" class="text-center py-2 text-muted">
-                            Aucun client enregistré
+                            Aucun fournisseur enregistré
                         </td>
                     </tr>
                     <?php endif; ?>
@@ -128,13 +137,13 @@ $clients = $db->query("SELECT * FROM client ORDER BY id DESC")->fetchAll(PDO::FE
     </div>
 </div>
 
-<!-- MODAL AJOUTER CLIENT -->
+<!-- MODAL AJOUTER FOURNISSEUR -->
 <div class="modal fade" id="ajouterModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form method="POST">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i> Ajouter un client</h5>
+                    <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i> Ajouter un fournisseur</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -145,8 +154,8 @@ $clients = $db->query("SELECT * FROM client ORDER BY id DESC")->fetchAll(PDO::FE
                             <input class="form-control" name="nom" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Prénom *</label>
-                            <input class="form-control" name="prenom" required>
+                            <label class="form-label">Nom du livreur *</label>
+                            <input class="form-control" name="nomLivreur" required>
                         </div>
                     </div>
                     <div class="row">
@@ -173,13 +182,13 @@ $clients = $db->query("SELECT * FROM client ORDER BY id DESC")->fetchAll(PDO::FE
     </div>
 </div>
 
-<!-- MODAL MODIFIER CLIENT -->
+<!-- MODAL MODIFIER FOURNISSEUR -->
 <div class="modal fade" id="modifierModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form method="POST">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-edit me-2"></i> Modifier le client</h5>
+                    <h5 class="modal-title"><i class="fas fa-edit me-2"></i> Modifier le fournisseur</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -191,8 +200,8 @@ $clients = $db->query("SELECT * FROM client ORDER BY id DESC")->fetchAll(PDO::FE
                             <input class="form-control" name="nom" id="edit_nom" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Prénom *</label>
-                            <input class="form-control" name="prenom" id="edit_prenom" required>
+                            <label class="form-label">Nom du livreur *</label>
+                            <input class="form-control" name="nomLivreur" id="edit_nomLivreur" required>
                         </div>
                     </div>
                     <div class="row">
@@ -219,16 +228,16 @@ $clients = $db->query("SELECT * FROM client ORDER BY id DESC")->fetchAll(PDO::FE
     </div>
 </div>
 
-<!-- MODAL SUPPRIMER CLIENT -->
+<!-- MODAL SUPPRIMER FOURNISSEUR -->
 <div class="modal fade" id="supprimerModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <form method="POST" class="modal-content">
             <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title"><i class="fas fa-trash me-1"></i> Supprimer le client</h5>
+                <h5 class="modal-title"><i class="fas fa-trash me-1"></i> Supprimer le fournisseur</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body text-center">
-                <p>Voulez-vous vraiment supprimer ce client ?</p>
+                <p>Voulez-vous vraiment supprimer ce fournisseur ?</p>
                 <input type="hidden" name="action" value="supprimer">
                 <input type="hidden" name="id" id="sup_id">
             </div>
@@ -242,13 +251,13 @@ $clients = $db->query("SELECT * FROM client ORDER BY id DESC")->fetchAll(PDO::FE
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-function chargerClient(client){
-    document.getElementById('edit_id').value = client.id;
-    document.getElementById('edit_nom').value = client.nom;
-    document.getElementById('edit_prenom').value = client.prenom;
-    document.getElementById('edit_telephone').value = client.telephone;
-    document.getElementById('edit_email').value = client.email;
-    document.getElementById('edit_adresse').value = client.adresse;
+function chargerFournisseur(fournisseur){
+    document.getElementById('edit_id').value = fournisseur.id;
+    document.getElementById('edit_nom').value = fournisseur.nom;
+    document.getElementById('edit_nomLivreur').value = fournisseur.nomLivreur;
+    document.getElementById('edit_telephone').value = fournisseur.telephone;
+    document.getElementById('edit_email').value = fournisseur.email;
+    document.getElementById('edit_adresse').value = fournisseur.adresse;
 }
 
 // Fonction pour ouvrir le modal de suppression et passer l'id
