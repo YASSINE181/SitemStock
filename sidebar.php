@@ -198,7 +198,3 @@ try {
     justify-content: center;
 }
 </style>
-<<<<<<< HEAD
-=======
-
->>>>>>> 887e58d0182093755b3fa36b5e1b2f3278439f70

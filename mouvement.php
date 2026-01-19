@@ -162,8 +162,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 }
 
 // Récupérer mouvements avec les noms des produits
-$mouvements = $db->query("
-    SELECT m.*, p.nom as produit_nom 
+$mouvements = $db->query("SELECT m.*, p.nom as produit_nom 
     FROM mouvements m
     LEFT JOIN produit p ON p.id = m.id_produit
     ORDER BY m.date_mouvement DESC
@@ -216,7 +215,7 @@ $produits = $db->query("SELECT id, nom FROM produit ORDER BY nom")->fetchAll(PDO
             <?php if ($mouvements): ?>
                 <?php foreach ($mouvements as $m): ?>
                     <tr>
-                        <td><?= htmlspecialchars($m['nom_produit']) ?></td>
+                        <td><?= htmlspecialchars($m['produit_nom']) ?></td>
                         <td>
                            <span class="badge <?= $m['type']=='entree'?'bg-success':'bg-danger' ?>">
                             <?= $m['type']=='entree'?'Entrée':'Sortie' ?>
