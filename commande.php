@@ -146,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             }
             break;
     }
-    header("Location: gestioncommande.php");
+    header("Location: commande.php");
     exit;
 }
 
@@ -184,37 +184,11 @@ $fournisseurs = $db->query("SELECT * FROM fournisseur WHERE etat = 1 ORDER BY no
 <title>Gestion des Commandes - SitemStock</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href="acceuil.css">
-<link rel="stylesheet" href="gestionstock.css">
-<style>
-    .btn-action {
-        width: 40px;
-        height: 40px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 3px;
-    }
-    .table-container {
-        background: white;
-        border-radius: 10px;
-        padding: 20px;
-        margin-top: 20px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-    }
-    .produit-item {
-        margin-bottom: 10px;
-        padding: 10px;
-        border: 1px solid #dee2e6;
-        border-radius: 5px;
-        background-color: #f8f9fa;
-    }
-</style>
+<link rel="stylesheet" href="sidebar.css">
 </head>
 <body>
 <div class="main-content">
     <?php include 'sidebar.php'; ?>
-    
     <!-- WELCOME -->
     <div class="welcome-section">
         <div class="row align-items-center">
@@ -265,7 +239,7 @@ $fournisseurs = $db->query("SELECT * FROM fournisseur WHERE etat = 1 ORDER BY no
                         <td><?= htmlspecialchars($commande['client_nom'] . ' ' . $commande['client_prenom']) ?></td>
                         <td><?= date('d/m/Y', strtotime($commande['date_commande'])) ?></td>
                         <td><?= date('d/m/Y', strtotime($commande['date_livraison'])) ?></td>
-                        <td><?= number_format($commande['montant_total'], 2) ?> €</td>
+                        <td><?= number_format($commande['montant_total'], 2) ?> DT</td>
                         <td class="text-center">
                             <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modifierModal" onclick='chargerCommande(<?= $commande['id'] ?>)'>
                                 <i class="fas fa-edit"></i>
@@ -546,7 +520,7 @@ function chargerCommande(commandeId) {
                         <option value="">Sélectionnez un produit</option>
                         ${produitsData.map(p => `
                         <option value="${p.id}" ${prod.produit_id == p.id ? 'selected' : ''}>
-                            ${p.nom} (${parseFloat(p.prix_vente).toFixed(2)}€)
+                            ${p.nom} (${parseFloat(p.prix_vente).toFixed(2)}DT)
                         </option>
                         `).join('')}
                     </select>

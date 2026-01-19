@@ -61,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([$_POST['id']]);
                 break;
         }
-        header("Location: gestionstock.php");
+        header("Location: produit.php");
         exit;
     }
 }
@@ -80,8 +80,7 @@ $fournisseurs = $db->query("SELECT * FROM fournisseur ORDER BY nom")->fetchAll(P
 <title>Gestion du Stock - SitemStock</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href="acceuil.css">
-<link rel="stylesheet" href="gestionstock.css">
+<link rel="stylesheet" href="sidebar.css">
 </head>
 <body>
 <div class="main-content">
@@ -126,9 +125,9 @@ $fournisseurs = $db->query("SELECT * FROM fournisseur ORDER BY nom")->fetchAll(P
                         else echo '<span class="badge bg-success">'.$stock.'</span>';
                         ?>
                     </td>
-                    <td class="text-end"><?= number_format($produit['prix_achat'],2,',',' ') ?> €</td>
-                    <td class="text-end"><?= number_format($produit['prix_vente'],2,',',' ') ?> €</td>
-                    <td class="text-end"><?= number_format($produit['prix_vente']-$produit['prix_achat'],2,',',' ') ?> €</td>
+                    <td class="text-end"><?= number_format($produit['prix_achat'],2,',',' ') ?> DT</td>
+                    <td class="text-end"><?= number_format($produit['prix_vente'],2,',',' ') ?> DT</td>
+                    <td class="text-end"><?= number_format($produit['prix_vente']-$produit['prix_achat'],2,',',' ') ?> DT</td>
                     <td class="text-center">
                         <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modifierModal" onclick='chargerProduit(<?= json_encode($produit, JSON_HEX_APOS | JSON_HEX_QUOT); ?>)'><i class="fas fa-edit"></i></button>
                         <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#supprimerModal" onclick="document.getElementById('sup_id').value=<?= $produit['id']; ?>;"><i class="fas fa-trash"></i></button>

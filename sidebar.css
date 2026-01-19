@@ -209,3 +209,25 @@ body {
     border-radius: 20px;
     font-size: 0.8rem;
 }
+.btn-action {
+            width: 40px;
+            height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 3px;
+        }
+        .badge-stock {
+            font-size: 0.85em;
+            padding: 5px 10px;
+        }
+        .profit {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }

@@ -41,23 +41,22 @@ try {
     </div>
 
     <div class="sidebar-menu">
-        <a href="acceuil.php" class="sidebar-item <?= basename($_SERVER['PHP_SELF']) == 'acceuil.php' ? 'active' : ''; ?>">
-            <i class="fas fa-home"></i><span>Accueil</span>
+        <a href="tableaudebord.php" class="sidebar-item <?= basename($_SERVER['PHP_SELF']) == 'tableaudebord.php' ? 'active' : ''; ?>">
+            <i class="fa-solid fa-gauge"></i><span>Tableau de bord</span>
         </a>
-
-        <a href="gestionstock.php" class="sidebar-item <?= basename($_SERVER['PHP_SELF']) == 'gestionstock.php' ? 'active' : ''; ?>">
+        <a href="produit.php" class="sidebar-item <?= basename($_SERVER['PHP_SELF']) == 'produit.php' ? 'active' : ''; ?>">
             <i class="fas fa-boxes"></i><span>Produits</span>
         </a>
 
-        <a href="gestionclient.php" class="sidebar-item <?= basename($_SERVER['PHP_SELF']) == 'gestionclient.php' ? 'active' : ''; ?>">
+        <a href="client.php" class="sidebar-item <?= basename($_SERVER['PHP_SELF']) == 'client.php' ? 'active' : ''; ?>">
             <i class="fas fa-users"></i><span>Clients</span>
         </a>
 
-        <a href="fournisseurs.php" class="sidebar-item <?= basename($_SERVER['PHP_SELF']) == 'fournisseurs.php' ? 'active' : ''; ?>">
+        <a href="fournisseur.php" class="sidebar-item <?= basename($_SERVER['PHP_SELF']) == 'fournisseur.php' ? 'active' : ''; ?>">
             <i class="fas fa-truck"></i><span>Fournisseurs</span>
         </a>
 
-        <a href="gestioncommande.php" class="sidebar-item <?= basename($_SERVER['PHP_SELF']) == 'gestioncommande.php' ? 'active' : ''; ?>">
+        <a href="commande.php" class="sidebar-item <?= basename($_SERVER['PHP_SELF']) == 'commande.php' ? 'active' : ''; ?>">
             <i class="fas fa-shopping-cart"></i><span>Commandes</span>
         </a>
 
@@ -77,10 +76,6 @@ try {
 <!-- Barre de Navigation Supérieure -->
 <div class="top-navbar">
     <div class="user-profile">
-        <div class="notification-bell">
-            <i class="fas fa-bell fa-lg"></i>
-            <span class="notification-badge">3</span>
-        </div>
         <div class="dropdown">
             <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
                 <div class="user-avatar">
@@ -143,53 +138,10 @@ try {
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
-                    <i class="fas fa-key me-1"></i> Changer le mot de passe
-                </button>
             </div>
         </div>
     </div>
 </div>
-
-<!-- MODAL CHANGEMENT DE MOT DE PASSE -->
-<div class="modal fade" id="changePasswordModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title"><i class="fas fa-key me-2"></i> Changer le mot de passe</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label">Mot de passe actuel</label>
-                    <input type="password" class="form-control" name="current_password">
-                </div>
-                
-                <div class="mb-3">
-                    <label class="form-label">Nouveau mot de passe</label>
-                    <input type="password" class="form-control" name="new_password">
-                </div>
-                
-                <div class="mb-3">
-                    <label class="form-label">Confirmer le nouveau mot de passe</label>
-                    <input type="password" class="form-control" name="confirm_password">
-                </div>
-                
-                <div class="alert alert-info">
-                    <small>
-                        <i class="fas fa-info-circle me-1"></i>
-                        Le mot de passe doit contenir au moins 8 caractères.
-                    </small>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                <button type="button" class="btn btn-primary">Enregistrer</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <style>
 /* Styles pour les avatars */
 .profile-avatar-large {
@@ -242,33 +194,3 @@ try {
     justify-content: center;
 }
 </style>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Gérer l'interaction entre les modals
-    var profileModal = document.getElementById('profileModal');
-    var changePasswordModal = document.getElementById('changePasswordModal');
-    
-    if (changePasswordModal) {
-        changePasswordModal.addEventListener('show.bs.modal', function () {
-            var modal = bootstrap.Modal.getInstance(profileModal);
-            if (modal) {
-                modal.hide();
-            }
-        });
-        
-        changePasswordModal.addEventListener('hidden.bs.modal', function () {
-            var modal = new bootstrap.Modal(profileModal);
-            modal.show();
-        });
-    }
-    
-    // Gérer les notifications
-    var notificationBell = document.querySelector('.notification-bell');
-    if (notificationBell) {
-        notificationBell.addEventListener('click', function() {
-            alert('Vous avez 3 nouvelles notifications');
-        });
-    }
-});
-</script>
