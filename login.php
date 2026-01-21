@@ -65,6 +65,11 @@ function validateEmail($email) {
     return filter_var($email, FILTER_VALIDATE_EMAIL);
 }
 
+// Fonction pour valider l'email Gmail
+function validateGmail($email) {
+    return filter_var($email, FILTER_VALIDATE_EMAIL) && preg_match('/@gmail\.com$/i', $email);
+}
+
 // Fonction pour hacher le mot de passe
 function hashPassword($password) {
     return password_hash($password, PASSWORD_BCRYPT);
@@ -107,8 +112,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['register'])) {
     
     if (empty($email)) {
         $errors[] = "L'adresse email est requise.";
-    } elseif (!validateEmail($email)) {
-        $errors[] = "L'adresse email est invalide.";
+    } elseif (!validateGmail($email)) {
+        $errors[] = "L'adresse email doit se terminer par @gmail.com.";
     }
     
     if (empty($password)) {
@@ -136,8 +141,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['register'])) {
             
             // Insertion dans la base de données
             $stmt = $pdo->prepare(
-                "INSERT INTO utilisateur (nom, email, mot_de_passe) 
-                 VALUES (?, ?, ?)"
+                "INSERT INTO utilisateur (nom, email, mot_de_passe, etat) 
+                 VALUES (?, ?, ?, '1')"
             );
             
             // Exécuter la requête
@@ -178,14 +183,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['login'])) {
     if (empty($email) || empty($password)) {
         $message = "Veuillez remplir tous les champs.";
         $messageType = "error";
-    } elseif (!validateEmail($email)) {
-        $message = "Veuillez entrer une adresse email valide.";
+    } elseif (!validateGmail($email)) {
+        $message = "L'adresse email doit se terminer par @gmail.com.";
         $messageType = "error";
     } else {
         try {
             // Recherche de l'utilisateur par email
             $stmt = $pdo->prepare(
-                "SELECT id, nom, email, mot_de_passe 
+                "SELECT id, nom, email, mot_de_passe, etat 
                  FROM utilisateur 
                  WHERE email = ?"
             );
@@ -195,8 +200,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['login'])) {
             if ($stmt->rowCount() === 1) {
                 $user = $stmt->fetch();
                 
+                // Vérifier si le compte est actif
+                if ($user['etat'] == '0') {
+                    $message = "Ce compte est désactivé. Contactez l'administrateur.";
+                    $messageType = "error";
+                }
                 // Vérification du mot de passe
-                if (verifyPassword($password, $user['mot_de_passe'])) {
+                else if (verifyPassword($password, $user['mot_de_passe'])) {
                     // Connexion réussie
                     $_SESSION['user_id'] = $user['id'];
                     $_SESSION['username'] = $user['nom'];
@@ -239,6 +249,26 @@ if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true) {
     <!-- FONT AWESOME -->
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+    <style>
+        .email-hint {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 0.25rem;
+            display: block;
+        }
+        .error-message {
+            color: #dc3545;
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+        .password-hint {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 0.25rem;
+            display: block;
+        }
+    </style>
 </head>
 <body>
 
@@ -252,16 +282,26 @@ if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true) {
                 <?= htmlspecialchars($message) ?>
             </p>
         <?php endif; ?>
-        <form method="POST">
+        <form method="POST" id="loginForm">
             <div class="field-wrapper slide-element">
-                <input type="text" name="username" required placeholder=" " autocomplete="email">
+                <input type="email" name="username" required placeholder=" " autocomplete="email"
+                       pattern="[a-zA-Z0-9._%+-]+@gmail\.com$"
+                       title="Veuillez entrer une adresse Gmail valide se terminant par @gmail.com"
+                       oninput="validateLoginEmail(this)">
                 <label>Email</label>
                 <i class="fa-solid fa-user"></i>
+                <span class="email-hint">Doit se terminer par @gmail.com</span>
+                <div id="loginEmailError" class="error-message"></div>
             </div>
             <div class="field-wrapper slide-element">
-                <input type="password" name="password" required placeholder=" " autocomplete="current-password">
+                <input type="password" name="password" required placeholder=" " autocomplete="current-password"
+                       minlength="6"
+                       title="Le mot de passe doit contenir au moins 6 caractères"
+                       oninput="validateLoginPassword(this)">
                 <label>Password</label>
                 <i class="fa-solid fa-lock"></i>
+                <span class="password-hint">Minimum 6 caractères</span>
+                <div id="loginPasswordError" class="error-message"></div>
             </div>
             <div class="field-wrapper slide-element">
                 <button class="submit-button" type="submit" name="login">Login</button>
@@ -291,19 +331,32 @@ if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true) {
                 ?>
             </p>
         <?php endif; ?>
-        <form method="POST">
+        <form method="POST" id="registerForm">
             <div class="field-wrapper slide-element">
-                <input type="text" name="username" required placeholder=" " autocomplete="username">
+                <input type="text" name="username" required placeholder=" " autocomplete="username"
+                       minlength="3"
+                       title="Le nom d'utilisateur doit contenir au moins 3 caractères">
                 <label>Username</label>
                 <i class="fa-solid fa-user"></i>
+                <span class="password-hint">Minimum 3 caractères</span>
             </div>
             <div class="field-wrapper slide-element">
-                <input type="email" name="email" required placeholder=" " autocomplete="email">
+                <input type="email" name="email" required placeholder=" " autocomplete="email"
+                       pattern="[a-zA-Z0-9._%+-]+@gmail\.com$"
+                       title="Veuillez entrer une adresse Gmail valide se terminant par @gmail.com"
+                       oninput="validateRegisterEmail(this)">
                 <label>Email</label>
+                <span class="email-hint">Doit se terminer par @gmail.com</span>
+                <div id="registerEmailError" class="error-message"></div>
             </div>
             <div class="field-wrapper slide-element">
-                <input type="password" name="password" required placeholder=" " autocomplete="new-password">
+                <input type="password" name="password" required placeholder=" " autocomplete="new-password"
+                       minlength="6"
+                       title="Le mot de passe doit contenir au moins 6 caractères"
+                       oninput="validateRegisterPassword(this)">
                 <label>Password</label>
+                <span class="password-hint">Minimum 6 caractères</span>
+                <div id="registerPasswordError" class="error-message"></div>
             </div>
             <div class="field-wrapper slide-element">
                 <button class="submit-button" type="submit" name="register">Register</button>
@@ -321,5 +374,140 @@ if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true) {
 </div>
 <!-- JS EXTERNE -->
 <script src="login.js"></script>
+<script>
+// Validation en temps réel pour le formulaire de connexion
+function validateLoginEmail(input) {
+    const email = input.value;
+    const errorDiv = document.getElementById('loginEmailError');
+    
+    if (email === '') {
+        errorDiv.style.display = 'none';
+        return;
+    }
+    
+    // Vérification avec regex pour @gmail.com
+    const gmailRegex = /@gmail\.com$/i;
+    if (!gmailRegex.test(email)) {
+        errorDiv.textContent = "L'email doit se terminer par @gmail.com";
+        errorDiv.style.display = 'block';
+        input.setCustomValidity("L'email doit se terminer par @gmail.com");
+    } else {
+        errorDiv.style.display = 'none';
+        input.setCustomValidity('');
+    }
+}
+
+function validateLoginPassword(input) {
+    const password = input.value;
+    const errorDiv = document.getElementById('loginPasswordError');
+    
+    if (password === '') {
+        errorDiv.style.display = 'none';
+        return;
+    }
+    
+    if (password.length < 6) {
+        errorDiv.textContent = "Le mot de passe doit contenir au moins 6 caractères";
+        errorDiv.style.display = 'block';
+        input.setCustomValidity("Le mot de passe doit contenir au moins 6 caractères");
+    } else {
+        errorDiv.style.display = 'none';
+        input.setCustomValidity('');
+    }
+}
+
+// Validation en temps réel pour le formulaire d'inscription
+function validateRegisterEmail(input) {
+    const email = input.value;
+    const errorDiv = document.getElementById('registerEmailError');
+    
+    if (email === '') {
+        errorDiv.style.display = 'none';
+        return;
+    }
+    
+    // Vérification avec regex pour @gmail.com
+    const gmailRegex = /@gmail\.com$/i;
+    if (!gmailRegex.test(email)) {
+        errorDiv.textContent = "L'email doit se terminer par @gmail.com";
+        errorDiv.style.display = 'block';
+        input.setCustomValidity("L'email doit se terminer par @gmail.com");
+    } else {
+        errorDiv.style.display = 'none';
+        input.setCustomValidity('');
+    }
+}
+
+function validateRegisterPassword(input) {
+    const password = input.value;
+    const errorDiv = document.getElementById('registerPasswordError');
+    
+    if (password === '') {
+        errorDiv.style.display = 'none';
+        return;
+    }
+    
+    if (password.length < 6) {
+        errorDiv.textContent = "Le mot de passe doit contenir au moins 6 caractères";
+        errorDiv.style.display = 'block';
+        input.setCustomValidity("Le mot de passe doit contenir au moins 6 caractères");
+    } else {
+        errorDiv.style.display = 'none';
+        input.setCustomValidity('');
+    }
+}
+
+// Validation des formulaires avant soumission
+document.getElementById('loginForm')?.addEventListener('submit', function(e) {
+    const emailInput = this.querySelector('input[name="username"]');
+    const passwordInput = this.querySelector('input[name="password"]');
+    let valid = true;
+    
+    if (!/@gmail\.com$/i.test(emailInput.value)) {
+        alert("L'adresse email doit se terminer par @gmail.com");
+        emailInput.focus();
+        valid = false;
+    }
+    
+    if (valid && passwordInput.value.length < 6) {
+        alert("Le mot de passe doit contenir au moins 6 caractères");
+        passwordInput.focus();
+        valid = false;
+    }
+    
+    if (!valid) {
+        e.preventDefault();
+    }
+});
+
+document.getElementById('registerForm')?.addEventListener('submit', function(e) {
+    const usernameInput = this.querySelector('input[name="username"]');
+    const emailInput = this.querySelector('input[name="email"]');
+    const passwordInput = this.querySelector('input[name="password"]');
+    let valid = true;
+    
+    if (usernameInput.value.length < 3) {
+        alert("Le nom d'utilisateur doit contenir au moins 3 caractères");
+        usernameInput.focus();
+        valid = false;
+    }
+    
+    if (valid && !/@gmail\.com$/i.test(emailInput.value)) {
+        alert("L'adresse email doit se terminer par @gmail.com");
+        emailInput.focus();
+        valid = false;
+    }
+    
+    if (valid && passwordInput.value.length < 6) {
+        alert("Le mot de passe doit contenir au moins 6 caractères");
+        passwordInput.focus();
+        valid = false;
+    }
+    
+    if (!valid) {
+        e.preventDefault();
+    }
+});
+</script>
 </body>
 </html>

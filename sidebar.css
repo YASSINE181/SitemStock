@@ -2,7 +2,6 @@
     --sidebar-width: 260px;
     --primary-color: #2c3e50;
     --secondary-color: #3498db;
-    --accent-color: #e74c3c;
 }
 
 body {
@@ -23,7 +22,6 @@ body {
     padding: 0;
     z-index: 1000;
     box-shadow: 3px 0 10px rgba(0,0,0,0.1);
-    transition: all 0.3s ease;
 }
 
 .sidebar-logo {
@@ -37,11 +35,6 @@ body {
     font-size: 1.4rem;
     color: white;
 }
-
-.sidebar-logo i {
-    color: var(--secondary-color);
-}
-
 .sidebar-menu {
     padding: 20px 0;
 }
@@ -178,57 +171,3 @@ body {
     border-radius: 10px 10px 0 0;
     border-bottom: none;
 }
-
-.modal-header .btn-close {
-    filter: invert(1);
-}
-
-.form-control-static {
-    padding: 8px 12px;
-    background-color: #f8f9fa;
-    border-radius: 5px;
-    border: 1px solid #e9ecef;
-    min-height: 38px;
-    display: flex;
-    align-items: center;
-}
-
-/* Utility Classes */
-.menu-toggle {
-    display: none;
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    color: var(--primary-color);
-}
-
-.stat-badge {
-    background: var(--secondary-color);
-    color: white;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-}
-.btn-action {
-            width: 40px;
-            height: 40px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 3px;
-        }
-        .badge-stock {
-            font-size: 0.85em;
-            padding: 5px 10px;
-        }
-        .profit {
-            color: #28a745;
-            font-weight: bold;
-        }
-        .table-container {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            margin-top: 20px;
-        }
-

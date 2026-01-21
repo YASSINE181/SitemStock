@@ -93,13 +93,11 @@ $fournisseurs = $db->query("SELECT * FROM fournisseur ORDER BY nom")->fetchAll(P
         </div>
     </div>
 </div>
-
-<div class="table-container">
-    <h5 class="mb-3">Liste des produits (<?php echo count($produits); ?> produits)</h5>
+<div class="table-container p-3">
     <div class="table-responsive">
         <table class="table table-hover">
-            <thead class="table-light">
-                <tr>
+            <thead class="table-dark">
+                <tr >
                     <th>ID</th><th>Produit</th><th>Fournisseur_ID</th>
                     <th class="text-center">Stock</th><th class="text-end">Prix Achat</th><th class="text-end">Prix Vente</th>
                     <th class="text-end">Marge</th><th class="text-center">Actions</th>
