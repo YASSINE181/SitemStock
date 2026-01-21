@@ -1,4 +1,4 @@
-<?php
+ <?php
 session_start();
 // Vérifier si l'utilisateur est connecté
 if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
@@ -19,10 +19,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         case 'ajouter':
             try {
                 $db->beginTransaction();
-                
+
                 // Générer un numéro de commande unique
                 $numero = 'CMD' . date('Ymd') . rand(1000, 9999);
-                
+
                 // Créer la commande
                 $stmt = $db->prepare("
                     INSERT INTO commande (numero_commande, client_id, date_commande, date_livraison, montant_total)
@@ -38,18 +38,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $commande_id = $db->lastInsertId();
                 $total = 0;
 
-                // Ajouter les produits à la commande
+                // Ajouter les produits à la commande et diminuer le stock
                 if (isset($_POST['produit_id'])) {
                     foreach ($_POST['produit_id'] as $i => $pid) {
                         if (empty($pid)) continue;
 
                         $qte = (int)$_POST['quantite'][$i];
-                        $fid = isset($_POST['fournisseur_id'][$i]) ? $_POST['fournisseur_id'][$i] : null;
 
                         // Récupérer le prix du produit
-                        $stmt = $db->prepare("SELECT prix_vente FROM produit WHERE id = ?");
+                        $stmt = $db->prepare("SELECT prix_vente, quantite_stock FROM produit WHERE id = ?");
                         $stmt->execute([$pid]);
-                        $pu = (float)$stmt->fetchColumn();
+                        $produit = $stmt->fetch(PDO::FETCH_ASSOC);
+                        $pu = (float)$produit['prix_vente'];
+                        $stock = (int)$produit['quantite_stock'];
+
+                        if($qte > $stock){
+                            throw new Exception("Quantité commandée supérieure au stock disponible pour le produit ID $pid");
+                        }
 
                         $montant = $pu * $qte;
                         $total += $montant;
@@ -57,10 +62,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                         // Ajouter le produit à la commande
                         $stmt = $db->prepare("
                             INSERT INTO commande_produit 
-                            (commande_id, produit_id, fournisseur_id, quantite, prix_unitaire, montant_total)
-                            VALUES (?, ?, ?, ?, ?, ?)
+                            (commande_id, produit_id, quantite, prix_unitaire, montant_total)
+                            VALUES (?, ?, ?, ?, ?)
                         ");
-                        $stmt->execute([$commande_id, $pid, $fid, $qte, $pu, $montant]);
+                        $stmt->execute([$commande_id, $pid, $qte, $pu, $montant]);
+
+                        // Diminuer le stock
+                        $stmt = $db->prepare("UPDATE produit SET quantite_stock = quantite_stock - ? WHERE id = ?");
+                        $stmt->execute([$qte, $pid]);
                     }
                 }
 
@@ -71,6 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $db->commit();
             } catch(Exception $e) {
                 $db->rollBack();
+                $_SESSION['message'] = "Erreur : " . $e->getMessage();
             }
             break;
 
@@ -78,6 +88,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             try {
                 $db->beginTransaction();
                 $id = $_POST['id'];
+
+                // Restaurer le stock des anciens produits
+                $oldProducts = $db->prepare("SELECT produit_id, quantite FROM commande_produit WHERE commande_id = ?");
+                $oldProducts->execute([$id]);
+                foreach($oldProducts->fetchAll(PDO::FETCH_ASSOC) as $p){
+                    $db->prepare("UPDATE produit SET quantite_stock = quantite_stock + ? WHERE id = ?")
+                       ->execute([$p['quantite'], $p['produit_id']]);
+                }
 
                 // Mettre à jour la commande
                 $stmt = $db->prepare("
@@ -92,57 +110,79 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     $id
                 ]);
 
-                // Supprimer les anciens produits de la commande
+                // Supprimer les anciens produits
                 $stmt = $db->prepare("DELETE FROM commande_produit WHERE commande_id = ?");
                 $stmt->execute([$id]);
 
-                // Ajouter les nouveaux produits
+                // Ajouter les nouveaux produits et diminuer le stock
                 $total = 0;
                 if (isset($_POST['produit_id'])) {
                     foreach ($_POST['produit_id'] as $i => $pid) {
                         if (empty($pid)) continue;
 
                         $qte = (int)$_POST['quantite'][$i];
-                        $fid = isset($_POST['fournisseur_id'][$i]) ? $_POST['fournisseur_id'][$i] : null;
 
-                        // Récupérer le prix du produit
-                        $stmt = $db->prepare("SELECT prix_vente FROM produit WHERE id = ?");
+                        // Récupérer le prix et le stock
+                        $stmt = $db->prepare("SELECT prix_vente, quantite_stock FROM produit WHERE id = ?");
                         $stmt->execute([$pid]);
-                        $pu = (float)$stmt->fetchColumn();
+                        $produit = $stmt->fetch(PDO::FETCH_ASSOC);
+                        $pu = (float)$produit['prix_vente'];
+                        $stock = (int)$produit['quantite_stock'];
+
+                        if($qte > $stock){
+                            throw new Exception("Quantité commandée supérieure au stock disponible pour le produit ID $pid");
+                        }
 
                         $montant = $pu * $qte;
                         $total += $montant;
 
-                        // Ajouter le produit à la commande
                         $stmt = $db->prepare("
                             INSERT INTO commande_produit 
-                            (commande_id, produit_id, fournisseur_id, quantite, prix_unitaire, montant_total)
-                            VALUES (?, ?, ?, ?, ?, ?)
+                            (commande_id, produit_id, quantite, prix_unitaire, montant_total)
+                            VALUES (?, ?, ?, ?, ?)
                         ");
-                        $stmt->execute([$id, $pid, $fid, $qte, $pu, $montant]);
+                        $stmt->execute([$id, $pid, $qte, $pu, $montant]);
+
+                        // Diminuer le stock
+                        $stmt = $db->prepare("UPDATE produit SET quantite_stock = quantite_stock - ? WHERE id = ?");
+                        $stmt->execute([$qte, $pid]);
                     }
                 }
 
-                // Mettre à jour le montant total
+                // Mettre à jour le total
                 $stmt = $db->prepare("UPDATE commande SET montant_total = ? WHERE id = ?");
                 $stmt->execute([$total, $id]);
 
                 $db->commit();
             } catch(Exception $e) {
                 $db->rollBack();
+                $_SESSION['message'] = "Erreur : " . $e->getMessage();
             }
             break;
 
         case 'supprimer':
             try {
+                $db->beginTransaction();
                 $id = $_POST['id'];
-                // Supprimer d'abord les produits de la commande
+
+                //  le stock
+                $oldProducts = $db->prepare("SELECT produit_id, quantite FROM commande_produit WHERE commande_id = ?");
+                $oldProducts->execute([$id]);
+                foreach($oldProducts->fetchAll(PDO::FETCH_ASSOC) as $p){
+                    $db->prepare("UPDATE produit SET quantite_stock = quantite_stock + ? WHERE id = ?")
+                       ->execute([$p['quantite'], $p['produit_id']]);
+                }
+
+                // Supprimer produits et commande
                 $stmt = $db->prepare("DELETE FROM commande_produit WHERE commande_id = ?");
                 $stmt->execute([$id]);
-                // Puis supprimer la commande
                 $stmt = $db->prepare("DELETE FROM commande WHERE id = ?");
                 $stmt->execute([$id]);
+
+                $db->commit();
             } catch(Exception $e) {
+                $db->rollBack();
+                $_SESSION['message'] = "Erreur : " . $e->getMessage();
             }
             break;
     }
@@ -158,7 +198,7 @@ $commandes = $db->query("
     ORDER BY c.id DESC
 ")->fetchAll(PDO::FETCH_ASSOC);
 
-// Récupérer les produits de chaque commande
+// Produits par commande
 $commandeProduits = [];
 foreach ($commandes as $commande) {
     $stmt = $db->prepare("
@@ -171,11 +211,12 @@ foreach ($commandes as $commande) {
     $commandeProduits[$commande['id']] = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-// Récupérer données pour les formulaires
+// Données pour les formulaires
 $clients = $db->query("SELECT * FROM client ORDER BY nom")->fetchAll(PDO::FETCH_ASSOC);
 $produits = $db->query("SELECT * FROM produit ORDER BY nom")->fetchAll(PDO::FETCH_ASSOC);
 $fournisseurs = $db->query("SELECT * FROM fournisseur WHERE etat = 1 ORDER BY nom")->fetchAll(PDO::FETCH_ASSOC);
 ?>
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -185,30 +226,7 @@ $fournisseurs = $db->query("SELECT * FROM fournisseur WHERE etat = 1 ORDER BY no
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="sidebar.css">
-<style>
-    .btn-action {
-        width: 40px;
-        height: 40px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 3px;
-    }
-    .table-container {
-        background: white;
-        border-radius: 10px;
-        padding: 20px;
-        margin-top: 20px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-    }
-    .produit-item {
-        margin-bottom: 10px;
-        padding: 10px;
-        border: 1px solid #dee2e6;
-        border-radius: 5px;
-        background-color: #f8f9fa;
-    }
-</style>
+
 </head>
 <body>
 <div class="main-content">
@@ -240,12 +258,9 @@ $fournisseurs = $db->query("SELECT * FROM fournisseur WHERE etat = 1 ORDER BY no
     
     <!-- TABLE COMMANDES -->
     <div class="table-container">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0">Liste des commandes (<?= count($commandes); ?>)</h5>
-        </div>
         <div class="table-responsive">
             <table class="table table-hover">
-                <thead class="table-light">
+                <thead class="table-dark">
                     <tr>
                         <th>ID</th>
                         <th>Numéro</th>
@@ -335,14 +350,7 @@ $fournisseurs = $db->query("SELECT * FROM fournisseur WHERE etat = 1 ORDER BY no
                                     <?php endforeach; ?>
                                 </select>
                             </div>
-                            <div class="col-md-3">
-                                <select class="form-select" name="fournisseur_id[]">
-                                    <option value="">Fournisseur</option>
-                                    <?php foreach ($fournisseurs as $fournisseur): ?>
-                                        <option value="<?= $fournisseur['id'] ?>"><?= htmlspecialchars($fournisseur['nom']) ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
+                            
                             <div class="col-md-2">
                                 <input type="number" class="form-control" name="quantite[]" value="1" min="1" required>
                             </div>
@@ -550,16 +558,7 @@ function chargerCommande(commandeId) {
                         `).join('')}
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <select class="form-select" name="fournisseur_id[]">
-                        <option value="">Fournisseur</option>
-                        ${fournisseursData.map(f => `
-                        <option value="${f.id}" ${prod.fournisseur_id == f.id ? 'selected' : ''}>
-                            ${f.nom}
-                        </option>
-                        `).join('')}
-                    </select>
-                </div>
+               
                 <div class="col-md-2">
                     <input type="number" class="form-control" name="quantite[]" value="${prod.quantite}" min="1" required>
                 </div>

@@ -5,18 +5,35 @@ if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
     header("Location: login.php");
     exit;
 }
+
 // Connexion DB
 $db = new PDO("mysql:host=localhost;dbname=sitemstock", 'root', '');
 $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
 // Récupérer l'utilisateur
 $req = $db->prepare("SELECT nom, email FROM utilisateur WHERE id = ?");
 $req->execute([$_SESSION['user_id']]);
 $user = $req->fetch(PDO::FETCH_ASSOC);
+
 // Gérer les actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+
+    // Validation email uniquement pour ajouter/modifier
+    if (in_array($_POST['action'], ['ajouter', 'modifier'])) {
+        if (!empty($_POST['email']) && !preg_match('/@gmail\.com$/i', $_POST['email'])) {
+            $_SESSION['error'] = "L'adresse email doit se terminer par @gmail.com";
+            header("Location: client.php");
+            exit;
+        }
+    }
+
     switch ($_POST['action']) {
+
         case 'ajouter':
-            $stmt = $db->prepare("INSERT INTO client (nom, prenom, telephone, email, adresse) VALUES (?, ?, ?, ?, ?)");
+            $stmt = $db->prepare(
+                "INSERT INTO client (nom, prenom, telephone, email, adresse) 
+                 VALUES (?, ?, ?, ?, ?)"
+            );
             $stmt->execute([
                 $_POST['nom'],
                 $_POST['prenom'],
@@ -27,7 +44,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             break;
 
         case 'modifier':
-            $stmt = $db->prepare("UPDATE client SET nom=?, prenom=?, telephone=?, email=?, adresse=? WHERE id=?");
+            $stmt = $db->prepare(
+                "UPDATE client SET nom=?, prenom=?, telephone=?, email=?, adresse=? WHERE id=?"
+            );
             $stmt->execute([
                 $_POST['nom'],
                 $_POST['prenom'],
@@ -39,10 +58,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             break;
 
         case 'supprimer':
-            $stmt = $db->prepare("DELETE FROM client WHERE id=?");
-            $stmt->execute([$_POST['id']]);
+            if (!empty($_POST['id'])) {
+                $stmt = $db->prepare("DELETE FROM client WHERE id=?");
+                $stmt->execute([$_POST['id']]);
+            }
             break;
     }
+
     header("Location: client.php");
     exit;
 }
@@ -59,6 +81,13 @@ $clients = $db->query("SELECT * FROM client ORDER BY id DESC")->fetchAll(PDO::FE
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="sidebar.css">
+<style>
+.email-hint {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+</style>
 </head>
 <body>
 <div class="main-content">
@@ -77,14 +106,20 @@ $clients = $db->query("SELECT * FROM client ORDER BY id DESC")->fetchAll(PDO::FE
             </div>
         </div>
     </div>
+    
+    <!-- Message d'erreur -->
+    <?php if(isset($_SESSION['error'])): ?>
+    <div class="alert alert-danger alert-dismissible fade show m-3" role="alert">
+        <?= $_SESSION['error']; ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <?php unset($_SESSION['error']); endif; ?>
+    
     <!-- TABLE CLIENTS -->
-    <div class="table-container">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0">Liste des clients (<?= count($clients); ?>)</h5>
-        </div>
+    <div class="table-container ">
         <div class="table-responsive">
             <table class="table table-hover">
-                <thead class="table-light">
+                <thead class="table-dark">
                     <tr>
                         <th>ID</th>
                         <th>Nom</th>
@@ -131,7 +166,7 @@ $clients = $db->query("SELECT * FROM client ORDER BY id DESC")->fetchAll(PDO::FE
 <div class="modal fade" id="ajouterModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <form method="POST">
+            <form method="POST" id="formAjouterClient">
                 <div class="modal-header">
                     <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i> Ajouter un client</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -155,7 +190,14 @@ $clients = $db->query("SELECT * FROM client ORDER BY id DESC")->fetchAll(PDO::FE
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Email</label>
-                            <input class="form-control" name="email" type="email">
+                            <input class="form-control" name="email" type="email" 
+                                   pattern="[a-zA-Z0-9._%+-]+@gmail\.com$"
+                                   title="L'adresse email doit se terminer par @gmail.com"
+                                   oninput="validateClientEmail(this)">
+                            <div class="email-hint">
+                                <i class="fas fa-info-circle"></i> Doit se terminer par @gmail.com (optionnel)
+                            </div>
+                            <div id="clientEmailError" class="text-danger small mt-1" style="display: none;"></div>
                         </div>
                     </div>
                     <div class="mb-3">
@@ -165,7 +207,7 @@ $clients = $db->query("SELECT * FROM client ORDER BY id DESC")->fetchAll(PDO::FE
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                    <button type="submit" class="btn btn-primary" id="submitClient">Enregistrer</button>
                 </div>
             </form>
         </div>
@@ -176,7 +218,7 @@ $clients = $db->query("SELECT * FROM client ORDER BY id DESC")->fetchAll(PDO::FE
 <div class="modal fade" id="modifierModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <form method="POST">
+            <form method="POST" id="formModifierClient">
                 <div class="modal-header">
                     <h5 class="modal-title"><i class="fas fa-edit me-2"></i> Modifier le client</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -201,7 +243,14 @@ $clients = $db->query("SELECT * FROM client ORDER BY id DESC")->fetchAll(PDO::FE
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Email</label>
-                            <input class="form-control" name="email" type="email" id="edit_email">
+                            <input class="form-control" name="email" type="email" id="edit_email"
+                                   pattern="[a-zA-Z0-9._%+-]+@gmail\.com$"
+                                   title="L'adresse email doit se terminer par @gmail.com"
+                                   oninput="validateClientEmail(this)">
+                            <div class="email-hint">
+                                <i class="fas fa-info-circle"></i> Doit se terminer par @gmail.com (optionnel)
+                            </div>
+                            <div id="editClientEmailError" class="text-danger small mt-1" style="display: none;"></div>
                         </div>
                     </div>
                     <div class="mb-3">
@@ -211,7 +260,7 @@ $clients = $db->query("SELECT * FROM client ORDER BY id DESC")->fetchAll(PDO::FE
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" class="btn btn-primary">Mettre à jour</button>
+                    <button type="submit" class="btn btn-primary" id="submitModifierClient">Mettre à jour</button>
                 </div>
             </form>
         </div>
@@ -250,10 +299,48 @@ function chargerClient(client){
     document.getElementById('edit_adresse').value = client.adresse;
 }
 
-// Fonction pour ouvrir le modal de suppression et passer l'id
 function setDeleteId(id){
     document.getElementById('sup_id').value = id;
 }
+
+function validateClientEmail(input) {
+    const email = input.value;
+    const errorDiv = input.id === 'edit_email' 
+        ? document.getElementById('editClientEmailError') 
+        : document.getElementById('clientEmailError');
+    
+    if (email === '') {
+        errorDiv.style.display = 'none';
+        return;
+    }
+    const gmailRegex = /@gmail\.com$/i;
+    if (!gmailRegex.test(email)) {
+        errorDiv.textContent = "L'email doit se terminer par @gmail.com";
+        errorDiv.style.display = 'block';
+        input.setCustomValidity("L'email doit se terminer par @gmail.com");
+    } else {
+        errorDiv.style.display = 'none';
+        input.setCustomValidity('');
+    }
+}
+
+document.getElementById('formAjouterClient')?.addEventListener('submit', function(e) {
+    const emailInput = this.querySelector('input[name="email"]');
+    if (emailInput.value && !/@gmail\.com$/i.test(emailInput.value)) {
+        e.preventDefault();
+        alert("L'adresse email doit se terminer par @gmail.com");
+        emailInput.focus();
+    }
+});
+
+document.getElementById('formModifierClient')?.addEventListener('submit', function(e) {
+    const emailInput = this.querySelector('input[name="email"]');
+    if (emailInput.value && !/@gmail\.com$/i.test(emailInput.value)) {
+        e.preventDefault();
+        alert("L'adresse email doit se terminer par @gmail.com");
+        emailInput.focus();
+    }
+});
 </script>
 </body>
 </html>

@@ -1,143 +1,123 @@
 <?php
 session_start();
-// Vérifier si l'utilisateur est connecté
+
+/* ===== SÉCURITÉ ===== */
 if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
     header("Location: login.php");
     exit;
 }
-// Connexion DB
+
+/* ===== CONNEXION DB ===== */
 $db = new PDO("mysql:host=localhost;dbname=sitemstock", 'root', '');
 $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-// Récupérer l'utilisateur
+
+/* ===== UTILISATEUR CONNECTÉ ===== */
 $req = $db->prepare("SELECT nom, email FROM utilisateur WHERE id = ?");
 $req->execute([$_SESSION['user_id']]);
 $user = $req->fetch(PDO::FETCH_ASSOC);
-// Gérer les actions
+
+/* ===== ACTIONS ===== */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    switch ($_POST['action']) {
-        case 'ajouter':
-            $stmt = $db->prepare("INSERT INTO fournisseur (nom, nomLivreur, telephone, email, adresse) VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([
-                $_POST['nom'],
-                $_POST['nomLivreur'],
-                $_POST['telephone'],
-                $_POST['email'],
-                $_POST['adresse']
-            ]);
-            break;
 
-        case 'modifier':
-            $stmt = $db->prepare("UPDATE fournisseur SET nom=?, nomLivreur=?, telephone=?, email=?, adresse=? WHERE id=?");
-            $stmt->execute([
-                $_POST['nom'],
-                $_POST['nomLivreur'],
-                $_POST['telephone'],
-                $_POST['email'],
-                $_POST['adresse'],
-                $_POST['id']
-            ]);
-            break;
+    /* ===== AJOUT (etat = 1) ===== */
+   if ($_POST['action'] === 'ajouter') {
+    $stmt = $db->prepare(
+        "INSERT INTO fournisseur (nom, nomLivreur, telephone, email, adresse, etat)
+         VALUES (?, ?, ?, ?, ?, '1')"
+    );
+    $stmt->execute([
+        $_POST['nom'],
+        $_POST['nomLivreur'],
+        $_POST['telephone'],
+        $_POST['email'],
+        $_POST['adresse']
+    ]);
+}
 
-        case 'supprimer':
-            $stmt = $db->prepare("DELETE FROM fournisseur WHERE id=?");
-            $stmt->execute([$_POST['id']]);
-            break;
+    /* ===== MODIFIER ===== */
+    if ($_POST['action'] === 'modifier') {
+        $stmt = $db->prepare(
+            "UPDATE fournisseur
+             SET nom=?, nomLivreur=?, telephone=?, email=?, adresse=?
+             WHERE id=?"
+        );
+        $stmt->execute([
+            $_POST['nom'],
+            $_POST['nomLivreur'],
+            $_POST['telephone'],
+            $_POST['email'],
+            $_POST['adresse'],
+            $_POST['id']
+        ]);
     }
+
+    /* ===== SUPPRESSION LOGIQUE (etat = 0) ===== */
+    if ($_POST['action'] === 'supprimer') {
+        $stmt = $db->prepare(
+            "UPDATE fournisseur SET etat = '0' WHERE id = ?"
+        );
+        $stmt->execute([$_POST['id']]);
+    }
+
     header("Location: fournisseur.php");
     exit;
 }
 
-// Récupérer fournisseurs
-$fournisseurs = $db->query("SELECT * FROM fournisseur ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
+/* ===== FOURNISSEURS ACTIFS ===== */
+$fournisseurs = $db->query(
+    "SELECT * FROM fournisseur WHERE etat = '1' ORDER BY id DESC"
+)->fetchAll(PDO::FETCH_ASSOC);
 ?>
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Gestion des Fournisseurs - SitemStock</title>
+
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="sidebar.css">
+
+<style>
+    /* Style pour espacer téléphone et email */
+    .telephone-cell, .email-cell {
+        padding-left: 10px !important;
+    }
+    
+    /* Pour rendre les boutons horizontaux */
+    .actions-cell {
+        white-space: nowrap; /* Empêche le retour à la ligne */
+    }
+    
+    .actions-buttons {
+        display: inline-flex;
+        gap: 5px; /* Espace entre les boutons */
+    }
+</style>
 </head>
+
 <body>
+
 <div class="main-content">
-    <?php include 'sidebar.php'; ?>
-    <!-- WELCOME -->
-    <div class="welcome-section">
-        <div class="row align-items-center">
-            <div class="col-md-8">
-                <h2><i class="fas fa-truck me-2"></i> Gestion des Fournisseurs</h2>
-                <p class="mb-0">Gérez l'ensemble des fournisseurs et leurs informations.</p>
-            </div>
-            <div class="col-md-4 text-end">
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ajouterModal">
-                    <i class="fas fa-plus me-1"></i> Ajouter un fournisseur
-                </button>
-            </div>
+<?php include "sidebar.php"; ?>
+
+<!-- ===== WELCOME ===== -->
+<div class="welcome-section mb-4">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h2><i class="fas fa-truck me-2"></i> Gestion des Fournisseurs</h2>
+            <p class="mb-0">Gérez l'ensemble des fournisseurs et leurs informations.</p>
         </div>
-    </div>
-    
-    <!-- Message Flash -->
-    <?php if (!empty($_SESSION['message'])): ?>
-    <div class="alert alert-info alert-dismissible fade show mt-3" role="alert">
-        <?= $_SESSION['message'] ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-    <?php unset($_SESSION['message']); ?>
-    <?php endif; ?>
-    
-    <!-- TABLE FOURNISSEURS -->
-    <div class="table-container">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0">Liste des fournisseurs (<?= count($fournisseurs); ?>)</h5>
-        </div>
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead class="table-light">
-                    <tr>
-                        <th>ID</th>
-                        <th>Nom</th>
-                        <th>Nom Livreur</th>
-                        <th>Téléphone</th>
-                        <th>Email</th>
-                        <th>Adresse</th>
-                        <th class="text-center">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($fournisseurs as $fournisseur): ?>
-                    <tr>
-                        <td><?= $fournisseur['id'] ?></td>
-                        <td><?= htmlspecialchars($fournisseur['nom']) ?></td>
-                        <td><?= htmlspecialchars($fournisseur['nomLivreur']) ?></td>
-                        <td><?= htmlspecialchars($fournisseur['telephone']) ?></td>
-                        <td><?= htmlspecialchars($fournisseur['email']) ?></td>
-                        <td><?= htmlspecialchars($fournisseur['adresse']) ?></td>
-                        <td class="text-center">
-                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modifierModal" onclick='chargerFournisseur(<?= json_encode($fournisseur) ?>)'>
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#supprimerModal" onclick="setDeleteId(<?= $fournisseur['id'] ?>)">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                    <?php if(empty($fournisseurs)): ?>
-                    <tr>
-                        <td colspan="7" class="text-center py-2 text-muted">
-                            Aucun fournisseur enregistré
-                        </td>
-                    </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
+        <div class="col-md-4 text-end">
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAjouter">
+                <i class="fas fa-plus me-1"></i> Ajouter un fournisseur
+            </button>
         </div>
     </div>
 </div>
 
-<!-- ================= TABLE ================= -->
+<!-- ===== TABLE ===== -->
 <div class="table-container">
 <table class="table table-hover align-middle">
 <thead class="table-dark">
@@ -152,28 +132,29 @@ $fournisseurs = $db->query("SELECT * FROM fournisseur ORDER BY id DESC")->fetchA
 </thead>
 <tbody>
 
+<?php if (!empty($fournisseurs)): ?>
 <?php foreach ($fournisseurs as $f): ?>
 <tr>
     <td><?= htmlspecialchars($f['nom']) ?></td>
     <td><?= htmlspecialchars($f['nomLivreur']) ?></td>
-    <td><?= htmlspecialchars($f['telephone']) ?></td>
-    <td><?= htmlspecialchars($f['email']) ?></td>
+    <td class="telephone-cell"><?= htmlspecialchars($f['telephone']) ?></td>
+    <td class="email-cell"><?= htmlspecialchars($f['email']) ?></td>
     <td><?= htmlspecialchars($f['adresse']) ?></td>
-    <td class="text-center">
-        <button class="btn btn-primary btn-action"
-            onclick='ouvrirModifierModal(<?= json_encode($f) ?>)'>
-            <i class="fas fa-edit"></i>
-        </button>
-
-        <button class="btn btn-danger btn-action"
-            onclick="ouvrirSupprimerModal(<?= $f['id'] ?>)">
-            <i class="fas fa-trash"></i>
-        </button>
+    <td class="text-center actions-cell">
+        <div class="actions-buttons">
+            <button class="btn btn-sm btn-outline-primary"
+                onclick='ouvrirModifierModal(<?= json_encode($f) ?>)'>
+                <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger"
+                onclick="ouvrirSupprimerModal(<?= $f['id'] ?>)">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
     </td>
 </tr>
 <?php endforeach; ?>
-
-<?php if (empty($fournisseurs)): ?>
+<?php else: ?>
 <tr>
     <td colspan="6" class="text-center text-muted py-4">
         Aucun fournisseur
@@ -193,7 +174,7 @@ $fournisseurs = $db->query("SELECT * FROM fournisseur ORDER BY id DESC")->fetchA
 <div class="modal-dialog">
 <form method="post" class="modal-content">
 <div class="modal-header">
-    <h5 class="modal-title">Ajouter fournisseur</h5>
+    <h5 class="modal-title"><i class="fas fa-plus me-2"></i> Ajouter fournisseur</h5>
     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
 </div>
 <div class="modal-body">
@@ -201,12 +182,14 @@ $fournisseurs = $db->query("SELECT * FROM fournisseur ORDER BY id DESC")->fetchA
     <input class="form-control mb-2" name="nom" placeholder="Nom" required>
     <input class="form-control mb-2" name="nomLivreur" placeholder="Nom livreur" required>
     <input class="form-control mb-2" name="telephone" placeholder="Téléphone" required>
-    <input class="form-control mb-2" name="email" type="email" placeholder="Email" required>
+    <input class="form-control mb-2" name="email" type="email" placeholder="Email" 
+           pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
+           title="Format : exemple@domaine.com" required>
     <input class="form-control" name="adresse" placeholder="Adresse" required>
 </div>
 <div class="modal-footer">
     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-    <button type="submit" class="btn btn-success">Ajouter</button>
+    <button type="submit" class="btn btn-primary">Ajouter</button>
 </div>
 </form>
 </div>
@@ -217,7 +200,7 @@ $fournisseurs = $db->query("SELECT * FROM fournisseur ORDER BY id DESC")->fetchA
 <div class="modal-dialog">
 <form method="post" class="modal-content">
 <div class="modal-header">
-    <h5 class="modal-title">Modifier fournisseur</h5>
+    <h5 class="modal-title"><i class="fas fa-edit me-2"></i> Modifier fournisseur</h5>
     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
 </div>
 <div class="modal-body">
@@ -226,7 +209,10 @@ $fournisseurs = $db->query("SELECT * FROM fournisseur ORDER BY id DESC")->fetchA
     <input class="form-control mb-2" name="nom" id="edit-nom" required>
     <input class="form-control mb-2" name="nomLivreur" id="edit-nomLivreur" required>
     <input class="form-control mb-2" name="telephone" id="edit-telephone" required>
-    <input class="form-control mb-2" name="email" id="edit-email" required>
+    <input class="form-control mb-2" name="email" id="edit-email" type="email" 
+           pattern="[a-zA-Z0-9._%+-]+@gmail\.com$"
+           title="L'adresse email doit se terminer par @gmail.com"
+           oninput="validateClientEmail(this)">
     <input class="form-control" name="adresse" id="edit-adresse" required>
 </div>
 <div class="modal-footer">
@@ -242,7 +228,7 @@ $fournisseurs = $db->query("SELECT * FROM fournisseur ORDER BY id DESC")->fetchA
 <div class="modal-dialog modal-dialog-centered">
 <form method="post" class="modal-content">
 <div class="modal-header bg-danger text-white">
-    <h5 class="modal-title">Supprimer fournisseur</h5>
+    <h5 class="modal-title"><i class="fas fa-trash me-1"></i> Supprimer fournisseur</h5>
     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
 </div>
 <div class="modal-body text-center">
@@ -258,33 +244,9 @@ $fournisseurs = $db->query("SELECT * FROM fournisseur ORDER BY id DESC")->fetchA
 </div>
 </div>
 
-<!-- ================= MODAL MESSAGE ================= -->
-<?php if (!empty($_SESSION['message'])): ?>
-<div class="modal fade" id="messageModal">
-<div class="modal-dialog modal-dialog-centered">
-<div class="modal-content text-center">
-<div class="modal-body py-4">
-    <h5><?= htmlspecialchars($_SESSION['message']) ?></h5>
-</div>
-</div>
-</div>
-</div>
-
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    const modal = new bootstrap.Modal(document.getElementById('messageModal'));
-    modal.show();
-    setTimeout(() => modal.hide(), 2000);
-});
-</script>
-<?php unset($_SESSION['message']); ?>
-<?php endif; ?>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 <script>
-function ouvrirAjouterModal() {
-    new bootstrap.Modal(document.getElementById('modalAjouter')).show();
-}
 function ouvrirModifierModal(f) {
     document.getElementById('edit-id').value = f.id;
     document.getElementById('edit-nom').value = f.nom;
@@ -294,6 +256,7 @@ function ouvrirModifierModal(f) {
     document.getElementById('edit-adresse').value = f.adresse;
     new bootstrap.Modal(document.getElementById('modalModifier')).show();
 }
+
 function ouvrirSupprimerModal(id) {
     document.getElementById('delete-id').value = id;
     new bootstrap.Modal(document.getElementById('modalSupprimer')).show();

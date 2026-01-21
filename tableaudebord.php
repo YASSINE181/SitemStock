@@ -13,6 +13,14 @@ $stmt = $pdo->prepare("SELECT nom FROM utilisateur WHERE id=?");
 $stmt->execute([$_SESSION['user_id']]);
 $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
+// VÉRIFICATION AJOUTÉE : Si l'utilisateur n'existe pas
+if (!$user) {
+    // Détruire la session et rediriger
+    session_destroy();
+    header("Location: login.php?error=session_expired");
+    exit;
+}
+
 // Compter le nombre de produits
 $stmt = $pdo->query("SELECT COUNT(*) as total_produits FROM produit");
 $totalProduits = $stmt->fetch(PDO::FETCH_ASSOC)['total_produits'];
@@ -54,7 +62,7 @@ $totalFournisseurs = $stmt->fetch(PDO::FETCH_ASSOC)['total_fournisseurs'];
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <h4><i class="fas fa-gauge me-2"></i> Tableau de bord</h4>
-                    <p class="mb-0">Bienvenue <strong><?= htmlspecialchars($user['nom']) ?></strong></p>
+                    <p class="mb-0">Bienvenue <strong><?= htmlspecialchars($user['nom'] ?? 'Utilisateur') ?></strong></p>
                     <small><?= date('d/m/Y H:i') ?></small>
                 </div>
                 <i class="fas fa-chart-line fa-3x opacity-50"></i>
