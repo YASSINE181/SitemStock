@@ -81,13 +81,7 @@ $clients = $db->query("SELECT * FROM client ORDER BY id DESC")->fetchAll(PDO::FE
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="sidebar.css">
-<style>
-.email-hint {
-    font-size: 0.85rem;
-    color: #6c757d;
-    margin-top: 0.25rem;
-}
-</style>
+
 </head>
 <body>
 <div class="main-content">
@@ -323,24 +317,6 @@ function validateClientEmail(input) {
         input.setCustomValidity('');
     }
 }
-
-document.getElementById('formAjouterClient')?.addEventListener('submit', function(e) {
-    const emailInput = this.querySelector('input[name="email"]');
-    if (emailInput.value && !/@gmail\.com$/i.test(emailInput.value)) {
-        e.preventDefault();
-        alert("L'adresse email doit se terminer par @gmail.com");
-        emailInput.focus();
-    }
-});
-
-document.getElementById('formModifierClient')?.addEventListener('submit', function(e) {
-    const emailInput = this.querySelector('input[name="email"]');
-    if (emailInput.value && !/@gmail\.com$/i.test(emailInput.value)) {
-        e.preventDefault();
-        alert("L'adresse email doit se terminer par @gmail.com");
-        emailInput.focus();
-    }
-});
 </script>
 </body>
 </html>

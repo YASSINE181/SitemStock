@@ -1,21 +1,25 @@
 <?php
 session_start();
-// Vérifier si l'utilisateur est connecté
-if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
+
+/* ===== SÉCURITÉ ===== */
+if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id']) || ($_SESSION['role']!="ADMIN")) {
     header("Location: login.php");
     exit;
 }
-// Connexion DB
-$db = new PDO("mysql:host=localhost;dbname=sitemstock", 'root', '');
+
+/* ===== CONNEXION DB ===== */
+$db = new PDO("mysql:host=localhost;dbname=sitemstock;charset=utf8mb4", 'root', '');
 $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-// Récupérer l'utilisateur connecté
+
+/* ===== UTILISATEUR CONNECTÉ ===== */
 $req = $db->prepare("SELECT nom, email FROM utilisateur WHERE id = ?");
 $req->execute([$_SESSION['user_id']]);
 $current_user = $req->fetch(PDO::FETCH_ASSOC);
 
-// Gérer les actions
+/* ===== GESTION DES ACTIONS ===== */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    // Validation de l'email (doit se terminer par @gmail.com)
+
+    // Validation email
     if (isset($_POST['email']) && !empty($_POST['email'])) {
         if (!preg_match('/@gmail\.com$/i', $_POST['email'])) {
             $_SESSION['error'] = "L'adresse email doit se terminer par @gmail.com";
@@ -23,60 +27,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             exit;
         }
     }
-    
+
     switch ($_POST['action']) {
+
+        /* ========= AJOUT ========= */
         case 'ajouter':
-            $hashed_password = password_hash($_POST['mot_de_passe'], PASSWORD_DEFAULT);
-            $stmt = $db->prepare("INSERT INTO utilisateur (nom, email, mot_de_passe, etat) VALUES (?, ?, ?, ?)");
+            $stmt = $db->prepare("
+                INSERT INTO utilisateur (nom, email, mot_de_passe, etat)
+                VALUES (?, ?, ?, '1')
+            ");
             $stmt->execute([
                 $_POST['nom'],
                 $_POST['email'],
-                $hashed_password,
-                $_POST['etat']
+                password_hash($_POST['mot_de_passe'], PASSWORD_DEFAULT)
             ]);
             break;
 
+        /* ========= MODIFIER ========= */
         case 'modifier':
-            // Si mot de passe fourni, le mettre à jour
+            // Lorsqu'on modifie, on remet toujours etat=1 (visible)
             if (!empty($_POST['mot_de_passe'])) {
-                $hashed_password = password_hash($_POST['mot_de_passe'], PASSWORD_DEFAULT);
-                $stmt = $db->prepare("UPDATE utilisateur SET nom=?, email=?, mot_de_passe=?, etat=? WHERE id=?");
+                $stmt = $db->prepare("
+                    UPDATE utilisateur
+                    SET nom=?, email=?, mot_de_passe=?, etat='1'
+                    WHERE id=?
+                ");
                 $stmt->execute([
                     $_POST['nom'],
                     $_POST['email'],
-                    $hashed_password,
-                    $_POST['etat'],
+                    password_hash($_POST['mot_de_passe'], PASSWORD_DEFAULT),
                     $_POST['id']
                 ]);
             } else {
-                // Sinon, ne pas modifier le mot de passe
-                $stmt = $db->prepare("UPDATE utilisateur SET nom=?, email=?, etat=? WHERE id=?");
+                $stmt = $db->prepare("
+                    UPDATE utilisateur
+                    SET nom=?, email=?, etat='1'
+                    WHERE id=?
+                ");
                 $stmt->execute([
                     $_POST['nom'],
                     $_POST['email'],
-                    $_POST['etat'],
                     $_POST['id']
                 ]);
             }
             break;
 
+        /* ========= SUPPRESSION LOGIQUE ========= */
         case 'supprimer':
-            // Empêcher la suppression de soi-même
             if ($_POST['id'] != $_SESSION['user_id']) {
-                $stmt = $db->prepare("DELETE FROM utilisateur WHERE id=?");
+                // Met l'utilisateur en etat=0 → il ne s'affiche plus
+                $stmt = $db->prepare("UPDATE utilisateur SET etat='0' WHERE id=?");
                 $stmt->execute([$_POST['id']]);
             } else {
                 $_SESSION['error'] = "Vous ne pouvez pas supprimer votre propre compte !";
             }
             break;
     }
+
     header("Location: utilisateur.php");
     exit;
 }
 
-// Récupérer tous les utilisateurs
-$utilisateurs = $db->query("SELECT id, nom, email, etat FROM utilisateur ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
+/* ===== RÉCUPÉRATION UTILISATEURS (affichage seulement etat=1) ===== */
+$utilisateurs = $db->query("
+    SELECT id, nom, email, etat
+    FROM utilisateur
+    WHERE etat = '1'
+    ORDER BY id DESC
+")->fetchAll(PDO::FETCH_ASSOC);
 ?>
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -326,49 +346,6 @@ function chargerUtilisateur(utilisateur){
 function setDeleteId(id){
     document.getElementById('sup_id').value = id;
 }
-
-// Validation en temps réel de l'email
-function validateEmail(input) {
-    const email = input.value;
-    const errorDiv = input.id === 'edit_email' 
-        ? document.getElementById('editEmailError') 
-        : document.getElementById('emailError');
-    
-    if (email === '') {
-        errorDiv.style.display = 'none';
-        return;
-    }
-    
-    // Vérification avec regex pour @gmail.com
-    const gmailRegex = /@gmail\.com$/i;
-    if (!gmailRegex.test(email)) {
-        errorDiv.textContent = "L'email doit se terminer par @gmail.com";
-        errorDiv.style.display = 'block';
-        input.setCustomValidity("L'email doit se terminer par @gmail.com");
-    } else {
-        errorDiv.style.display = 'none';
-        input.setCustomValidity('');
-    }
-}
-
-// Validation des formulaires avant soumission
-document.getElementById('formAjouter')?.addEventListener('submit', function(e) {
-    const emailInput = this.querySelector('input[name="email"]');
-    if (!/@gmail\.com$/i.test(emailInput.value)) {
-        e.preventDefault();
-        alert("L'adresse email doit se terminer par @gmail.com");
-        emailInput.focus();
-    }
-});
-
-document.getElementById('formModifier')?.addEventListener('submit', function(e) {
-    const emailInput = this.querySelector('input[name="email"]');
-    if (!/@gmail\.com$/i.test(emailInput.value)) {
-        e.preventDefault();
-        alert("L'adresse email doit se terminer par @gmail.com");
-        emailInput.focus();
-    }
-});
 </script>
 </body>
 </html>

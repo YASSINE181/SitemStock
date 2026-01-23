@@ -17,21 +17,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
     exit;
 }
 
-/* ================= INFOS UTILISATEUR ================= */
-try {
-    $db = new PDO("mysql:host=localhost;dbname=sitemstock;charset=utf8", "root", "");
-    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-    // Même requête que vous aviez
-    $stmt = $db->prepare("SELECT nom FROM utilisateur WHERE id = ?");
-    $stmt->execute([$_SESSION['user_id']]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    $userNom = $user ? $user['nom'] : 'Utilisateur';
-
-} catch (PDOException $e) {
-    $userNom = 'Utilisateur';
-}
+$roleName = $_SESSION['role'];
+$userNom = $_SESSION['username'];
 ?>
 <!-- ================= SIDEBAR ================= -->
 <div class="sidebar">
@@ -55,9 +42,11 @@ try {
         <a href="fournisseur.php" class="sidebar-item <?= basename($_SERVER['PHP_SELF']) == 'fournisseur.php' ? 'active' : ''; ?>">
             <i class="fas fa-truck"></i><span>Fournisseurs</span>
         </a>
+        <?php if($roleName == "ADMIN"){ ?>
         <a href="utilisateur.php" class="sidebar-item <?= basename($_SERVER['PHP_SELF']) == 'utilisateur.php' ? 'active' : ''; ?>">
             <i class="fas fa-user"></i><span>Utilisateurs</span>
         </a>
+        <?php } ?>
 
         <a href="commande.php" class="sidebar-item <?= basename($_SERVER['PHP_SELF']) == 'commande.php' ? 'active' : ''; ?>">
             <i class="fas fa-shopping-cart"></i><span>Commandes</span>
@@ -83,11 +72,11 @@ try {
         <div class="dropdown">
             <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
                 <div class="user-avatar">
-                    <?php echo !empty($userNom) ? strtoupper(substr($userNom, 0, 1)) : 'U'; ?>
+                    <?php echo strtoupper(substr($userNom, 0, 1)); ?>
                 </div>
                 <div class="user-info ms-2">
-                    <h5><?php echo !empty($userNom) ? htmlspecialchars($userNom) : 'Utilisateur'; ?></h5>
-                    <p>Administrateur</p>
+                    <h5><?php echo htmlspecialchars($userNom); ?></h5>
+                    <p><?php echo $roleName; ?></p>
                 </div>
             </a>
             <ul class="dropdown-menu dropdown-menu-end">
@@ -115,7 +104,7 @@ try {
                         <?php echo !empty($userNom) ? strtoupper(substr($userNom, 0, 1)) : 'U'; ?>
                     </div>
                     <h4><?php echo htmlspecialchars($userNom); ?></h4>
-                    <p class="text-muted">Administrateur</p>
+                    <p class="text-muted"><?php echo $roleName; ?></p>
                 </div>
                 
                 <div class="profile-info">

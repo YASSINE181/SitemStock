@@ -1,5 +1,6 @@
 <?php
 session_start();
+require "config.php";
 
 /* ===== SÉCURITÉ ===== */
 if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
@@ -7,53 +8,69 @@ if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
     exit;
 }
 
-/* ===== CONNEXION DB ===== */
-$db = new PDO("mysql:host=localhost;dbname=sitemstock", 'root', '');
-$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
 /* ===== UTILISATEUR CONNECTÉ ===== */
-$req = $db->prepare("SELECT nom, email FROM utilisateur WHERE id = ?");
+$req = $pdo->prepare("SELECT nom, email FROM utilisateur WHERE id = ?");
 $req->execute([$_SESSION['user_id']]);
 $user = $req->fetch(PDO::FETCH_ASSOC);
 
+/* ===== FONCTION DE VALIDATION EMAIL ===== */
+function validerEmail($email) {
+    // Pattern regex pour validation email
+    $pattern = '/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/';
+    return preg_match($pattern, $email);
+}
+
 /* ===== ACTIONS ===== */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    $erreur = '';
 
     /* ===== AJOUT (etat = 1) ===== */
-   if ($_POST['action'] === 'ajouter') {
-    $stmt = $db->prepare(
-        "INSERT INTO fournisseur (nom, nomLivreur, telephone, email, adresse, etat)
-         VALUES (?, ?, ?, ?, ?, '1')"
-    );
-    $stmt->execute([
-        $_POST['nom'],
-        $_POST['nomLivreur'],
-        $_POST['telephone'],
-        $_POST['email'],
-        $_POST['adresse']
-    ]);
-}
+    if ($_POST['action'] === 'ajouter') {
+        // Validation email
+        if (!validerEmail($_POST['email'])) {
+            $_SESSION['error'] = "Format d'email invalide. Exemple : exemple@domaine.com";
+        } else {
+            $stmt = $pdo->prepare(
+                "INSERT INTO fournisseur (nom, nomLivreur, telephone, email, adresse, etat)
+                 VALUES (?, ?, ?, ?, ?, '1')"
+            );
+            $stmt->execute([
+                $_POST['nom'],
+                $_POST['nomLivreur'],
+                $_POST['telephone'],
+                $_POST['email'],
+                $_POST['adresse']
+            ]);
+            
+        }
+    }
 
     /* ===== MODIFIER ===== */
     if ($_POST['action'] === 'modifier') {
-        $stmt = $db->prepare(
-            "UPDATE fournisseur
-             SET nom=?, nomLivreur=?, telephone=?, email=?, adresse=?
-             WHERE id=?"
-        );
-        $stmt->execute([
-            $_POST['nom'],
-            $_POST['nomLivreur'],
-            $_POST['telephone'],
-            $_POST['email'],
-            $_POST['adresse'],
-            $_POST['id']
-        ]);
+        // Validation email
+        if (!validerEmail($_POST['email'])) {
+            $_SESSION['error'] = "Format d'email invalide. Exemple : exemple@domaine.com";
+        } else {
+            $stmt = $pdo->prepare(
+                "UPDATE fournisseur
+                 SET nom=?, nomLivreur=?, telephone=?, email=?, adresse=?
+                 WHERE id=?"
+            );
+            $stmt->execute([
+                $_POST['nom'],
+                $_POST['nomLivreur'],
+                $_POST['telephone'],
+                $_POST['email'],
+                $_POST['adresse'],
+                $_POST['id']
+            ]);
+            
+        }
     }
 
     /* ===== SUPPRESSION LOGIQUE (etat = 0) ===== */
     if ($_POST['action'] === 'supprimer') {
-        $stmt = $db->prepare(
+        $stmt = $pdo->prepare(
             "UPDATE fournisseur SET etat = '0' WHERE id = ?"
         );
         $stmt->execute([$_POST['id']]);
@@ -64,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 }
 
 /* ===== FOURNISSEURS ACTIFS ===== */
-$fournisseurs = $db->query(
+$fournisseurs = $pdo->query(
     "SELECT * FROM fournisseur WHERE etat = '1' ORDER BY id DESC"
 )->fetchAll(PDO::FETCH_ASSOC);
 ?>
@@ -82,7 +99,7 @@ $fournisseurs = $db->query(
 <style>
     /* Style pour espacer téléphone et email */
     .telephone-cell, .email-cell {
-        padding-left: 10px !important;
+        padding-left: 15px !important;
     }
     
     /* Pour rendre les boutons horizontaux */
@@ -101,6 +118,25 @@ $fournisseurs = $db->query(
 
 <div class="main-content">
 <?php include "sidebar.php"; ?>
+
+<!-- ===== MESSAGES D'ALERTE ===== -->
+<?php if (isset($_SESSION['message'])): ?>
+<div class="alert alert-success alert-dismissible fade show m-3" role="alert">
+    <i class="fas fa-check-circle me-2"></i>
+    <?= htmlspecialchars($_SESSION['message']) ?>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+<?php unset($_SESSION['message']); ?>
+<?php endif; ?>
+
+<?php if (isset($_SESSION['error'])): ?>
+<div class="alert alert-danger alert-dismissible fade show m-3" role="alert">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    <?= htmlspecialchars($_SESSION['error']) ?>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+<?php unset($_SESSION['error']); ?>
+<?php endif; ?>
 
 <!-- ===== WELCOME ===== -->
 <div class="welcome-section mb-4">
@@ -172,20 +208,43 @@ $fournisseurs = $db->query(
 <!-- AJOUT -->
 <div class="modal fade" id="modalAjouter">
 <div class="modal-dialog">
-<form method="post" class="modal-content">
+<form method="post" class="modal-content" onsubmit="return validerEmail('ajouter')">
 <div class="modal-header">
     <h5 class="modal-title"><i class="fas fa-plus me-2"></i> Ajouter fournisseur</h5>
     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
 </div>
 <div class="modal-body">
     <input type="hidden" name="action" value="ajouter">
-    <input class="form-control mb-2" name="nom" placeholder="Nom" required>
-    <input class="form-control mb-2" name="nomLivreur" placeholder="Nom livreur" required>
-    <input class="form-control mb-2" name="telephone" placeholder="Téléphone" required>
-    <input class="form-control mb-2" name="email" type="email" placeholder="Email" 
-           pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
-           title="Format : exemple@domaine.com" required>
-    <input class="form-control" name="adresse" placeholder="Adresse" required>
+    
+    <div class="mb-2">
+        <input class="form-control" name="nom" placeholder="Nom" required>
+    </div>
+    
+    <div class="mb-2">
+        <input class="form-control" name="nomLivreur" placeholder="Nom livreur" required>
+    </div>
+    
+    <div class="mb-2">
+        <input class="form-control" name="telephone" placeholder="Téléphone" required>
+    </div>
+    
+    <div class="mb-2">
+        <input class="form-control" 
+               name="email" 
+               type="email" 
+               id="email-ajouter"
+               placeholder="Email" 
+               pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
+               title="Format : exemple@domaine.com" 
+               required>
+        <div class="invalid-feedback" id="email-error-ajouter">
+            Format d'email invalide. Exemple: exemple@domaine.com
+        </div>
+    </div>
+    
+    <div class="mb-2">
+        <input class="form-control" name="adresse" placeholder="Adresse" required>
+    </div>
 </div>
 <div class="modal-footer">
     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
@@ -198,7 +257,7 @@ $fournisseurs = $db->query(
 <!-- MODIFIER -->
 <div class="modal fade" id="modalModifier">
 <div class="modal-dialog">
-<form method="post" class="modal-content">
+<form method="post" class="modal-content" onsubmit="return validerEmail('modifier')">
 <div class="modal-header">
     <h5 class="modal-title"><i class="fas fa-edit me-2"></i> Modifier fournisseur</h5>
     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -206,14 +265,35 @@ $fournisseurs = $db->query(
 <div class="modal-body">
     <input type="hidden" name="action" value="modifier">
     <input type="hidden" name="id" id="edit-id">
-    <input class="form-control mb-2" name="nom" id="edit-nom" required>
-    <input class="form-control mb-2" name="nomLivreur" id="edit-nomLivreur" required>
-    <input class="form-control mb-2" name="telephone" id="edit-telephone" required>
-    <input class="form-control mb-2" name="email" id="edit-email" type="email" 
-           pattern="[a-zA-Z0-9._%+-]+@gmail\.com$"
-           title="L'adresse email doit se terminer par @gmail.com"
-           oninput="validateClientEmail(this)">
-    <input class="form-control" name="adresse" id="edit-adresse" required>
+    
+    <div class="mb-2">
+        <input class="form-control" name="nom" id="edit-nom" required>
+    </div>
+    
+    <div class="mb-2">
+        <input class="form-control" name="nomLivreur" id="edit-nomLivreur" required>
+    </div>
+    
+    <div class="mb-2">
+        <input class="form-control" name="telephone" id="edit-telephone" required>
+    </div>
+    
+    <div class="mb-2">
+        <input class="form-control" 
+               name="email" 
+               type="email" 
+               id="email-modifier"
+               pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
+               title="Format : exemple@domaine.com" 
+               required>
+        <div class="invalid-feedback" id="email-error-modifier">
+            Format d'email invalide. Exemple: exemple@domaine.com
+        </div>
+    </div>
+    
+    <div class="mb-2">
+        <input class="form-control" name="adresse" id="edit-adresse" required>
+    </div>
 </div>
 <div class="modal-footer">
     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
@@ -252,7 +332,7 @@ function ouvrirModifierModal(f) {
     document.getElementById('edit-nom').value = f.nom;
     document.getElementById('edit-nomLivreur').value = f.nomLivreur;
     document.getElementById('edit-telephone').value = f.telephone;
-    document.getElementById('edit-email').value = f.email;
+    document.getElementById('email-modifier').value = f.email;
     document.getElementById('edit-adresse').value = f.adresse;
     new bootstrap.Modal(document.getElementById('modalModifier')).show();
 }
@@ -261,6 +341,7 @@ function ouvrirSupprimerModal(id) {
     document.getElementById('delete-id').value = id;
     new bootstrap.Modal(document.getElementById('modalSupprimer')).show();
 }
+
 </script>
 
 </body>

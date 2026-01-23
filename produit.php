@@ -52,10 +52,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ]);
                 break;
                 
-            case 'supprimer':
-                $stmt = $db->prepare("DELETE FROM produit WHERE id = ?");
-                $stmt->execute([$_POST['id']]);
-                break;
+           case 'supprimer':
+
+    $idProduit = $_POST['id'];
+
+    // 1️⃣ Supprimer les mouvements liés à ce produit
+    $stmt = $db->prepare("DELETE FROM mouvements WHERE id_produit = ?");
+    $stmt->execute([$idProduit]);
+
+    // 2️⃣ Supprimer le produit
+    $stmt = $db->prepare("DELETE FROM produit WHERE id = ?");
+    $stmt->execute([$idProduit]);
+
+    break;
+
         }
         header("Location: produit.php");
         exit;
