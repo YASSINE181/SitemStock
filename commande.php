@@ -214,7 +214,6 @@ foreach ($commandes as $commande) {
 // Données pour les formulaires
 $clients = $db->query("SELECT * FROM client ORDER BY nom")->fetchAll(PDO::FETCH_ASSOC);
 $produits = $db->query("SELECT * FROM produit ORDER BY nom")->fetchAll(PDO::FETCH_ASSOC);
-$fournisseurs = $db->query("SELECT * FROM fournisseur WHERE etat = 1 ORDER BY nom")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -483,14 +482,6 @@ document.getElementById('add-produit-edit').onclick = function() {
                 <?php endforeach; ?>
             </select>
         </div>
-        <div class="col-md-3">
-            <select class="form-select" name="fournisseur_id[]">
-                <option value="">Fournisseur</option>
-                <?php foreach ($fournisseurs as $fournisseur): ?>
-                    <option value="<?= $fournisseur['id'] ?>"><?= htmlspecialchars($fournisseur['nom']) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
         <div class="col-md-2">
             <input type="number" class="form-control" name="quantite[]" value="1" min="1" required>
         </div>
@@ -520,9 +511,7 @@ function chargerCommande(commandeId) {
     // Stocker les données PHP en JavaScript pour y accéder
     const commandesData = <?= json_encode($commandes) ?>;
     const commandeProduitsData = <?= json_encode($commandeProduits) ?>;
-    const produitsData = <?= json_encode($produits) ?>;
-    const fournisseursData = <?= json_encode($fournisseurs) ?>;
-    
+    const produitsData = <?= json_encode($produits) ?>;    
     // Trouver la commande correspondante
     const commande = commandesData.find(c => c.id == commandeId);
     
@@ -558,7 +547,6 @@ function chargerCommande(commandeId) {
                         `).join('')}
                     </select>
                 </div>
-               
                 <div class="col-md-2">
                     <input type="number" class="form-control" name="quantite[]" value="${prod.quantite}" min="1" required>
                 </div>

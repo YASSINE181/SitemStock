@@ -2,7 +2,7 @@
 session_start();
 
 /* ===== SÉCURITÉ ===== */
-if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
+if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id']) || ($_SESSION['role']!="ADMIN")) {
     header("Location: login.php");
     exit;
 }
@@ -346,49 +346,6 @@ function chargerUtilisateur(utilisateur){
 function setDeleteId(id){
     document.getElementById('sup_id').value = id;
 }
-
-// Validation en temps réel de l'email
-function validateEmail(input) {
-    const email = input.value;
-    const errorDiv = input.id === 'edit_email' 
-        ? document.getElementById('editEmailError') 
-        : document.getElementById('emailError');
-    
-    if (email === '') {
-        errorDiv.style.display = 'none';
-        return;
-    }
-    
-    // Vérification avec regex pour @gmail.com
-    const gmailRegex = /@gmail\.com$/i;
-    if (!gmailRegex.test(email)) {
-        errorDiv.textContent = "L'email doit se terminer par @gmail.com";
-        errorDiv.style.display = 'block';
-        input.setCustomValidity("L'email doit se terminer par @gmail.com");
-    } else {
-        errorDiv.style.display = 'none';
-        input.setCustomValidity('');
-    }
-}
-
-// Validation des formulaires avant soumission
-document.getElementById('formAjouter')?.addEventListener('submit', function(e) {
-    const emailInput = this.querySelector('input[name="email"]');
-    if (!/@gmail\.com$/i.test(emailInput.value)) {
-        e.preventDefault();
-        alert("L'adresse email doit se terminer par @gmail.com");
-        emailInput.focus();
-    }
-});
-
-document.getElementById('formModifier')?.addEventListener('submit', function(e) {
-    const emailInput = this.querySelector('input[name="email"]');
-    if (!/@gmail\.com$/i.test(emailInput.value)) {
-        e.preventDefault();
-        alert("L'adresse email doit se terminer par @gmail.com");
-        emailInput.focus();
-    }
-});
 </script>
 </body>
 </html>

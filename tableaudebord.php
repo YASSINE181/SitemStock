@@ -14,12 +14,12 @@ $stmt->execute([$_SESSION['user_id']]);
 $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // VÉRIFICATION AJOUTÉE : Si l'utilisateur n'existe pas
-if (!$user) {
-    // Détruire la session et rediriger
-    session_destroy();
-    header("Location: login.php?error=session_expired");
-    exit;
-}
+// if (!$user) {
+//     // Détruire la session et rediriger
+//     session_destroy();
+//     header("Location: login.php?error=session_expired");
+//     exit;
+// }
 
 // Compter le nombre de produits
 $stmt = $pdo->query("SELECT COUNT(*) as total_produits FROM produit");

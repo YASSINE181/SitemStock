@@ -111,15 +111,6 @@ $fournisseurs = $pdo->query(
         display: inline-flex;
         gap: 5px; /* Espace entre les boutons */
     }
-    
-    .invalid-feedback {
-        display: none;
-        font-size: 0.875em;
-    }
-    
-    .is-invalid {
-        border-color: #dc3545 !important;
-    }
 </style>
 </head>
 
@@ -286,7 +277,6 @@ $fournisseurs = $pdo->query(
     <div class="mb-2">
         <input class="form-control" name="telephone" id="edit-telephone" required>
     </div>
-    
     <div class="mb-2">
         <input class="form-control" 
                name="email" 
@@ -351,49 +341,6 @@ function ouvrirSupprimerModal(id) {
     new bootstrap.Modal(document.getElementById('modalSupprimer')).show();
 }
 
-// Fonction de validation d'email côté client
-function validerEmail(type) {
-    let emailInput, errorDiv;
-    
-    if (type === 'ajouter') {
-        emailInput = document.getElementById('email-ajouter');
-        errorDiv = document.getElementById('email-error-ajouter');
-    } else {
-        emailInput = document.getElementById('email-modifier');
-        errorDiv = document.getElementById('email-error-modifier');
-    }
-    
-    const email = emailInput.value;
-    const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    
-    if (!emailPattern.test(email)) {
-        emailInput.classList.add('is-invalid');
-        errorDiv.style.display = 'block';
-        return false;
-    }
-    
-    emailInput.classList.remove('is-invalid');
-    errorDiv.style.display = 'none';
-    return true;
-}
-
-// Validation en temps réel
-document.addEventListener('DOMContentLoaded', function() {
-    const emailAjouter = document.getElementById('email-ajouter');
-    const emailModifier = document.getElementById('email-modifier');
-    
-    if (emailAjouter) {
-        emailAjouter.addEventListener('input', function() {
-            validerEmail('ajouter');
-        });
-    }
-    
-    if (emailModifier) {
-        emailModifier.addEventListener('input', function() {
-            validerEmail('modifier');
-        });
-    }
-});
 </script>
 
 </body>

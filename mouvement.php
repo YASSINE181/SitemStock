@@ -201,8 +201,6 @@ $mouvements = $produitTableExists
         </table>
     </div>
 </div>
-
-<!-- Modals : Ajouter / Modifier / Supprimer (inchangés, juste intégrés ci-dessous) -->
 <!-- Modal Ajouter -->
 <div class="modal fade" id="ajouterModal" tabindex="-1"><div class="modal-dialog">
 <form method="POST" class="modal-content">
